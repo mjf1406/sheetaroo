@@ -1,8 +1,7 @@
-
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/nunito-sans";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/nunito-sans';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -141,10 +140,30 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
   }
+}
+
+.page-break-before {
+  break-before: page;
+  page-break-before: always;
+}
+
+.worksheet-print-root[data-page-size='letter'] .worksheet-page {
+  width: 8.5in;
+  min-height: 11in;
+  margin-inline: auto;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+.worksheet-print-root[data-page-size='a4'] .worksheet-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin-inline: auto;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
 }

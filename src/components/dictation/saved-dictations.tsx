@@ -78,7 +78,7 @@ export function SavedDictations({ dictations }: SavedDictationsProps) {
                   ) : null}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" aria-label={`Delete ${dictation.name}`}>
+                      <Button size="sm" variant="destructive" aria-label={`Delete ${dictation.name}`}>
                         <Trash2 className="size-4" />
                       </Button>
                     </AlertDialogTrigger>

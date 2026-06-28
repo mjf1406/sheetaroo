@@ -12,7 +12,7 @@ export type WorksheetView = 'all' | WorksheetId
 export type VocabEntry = { word: string; definition?: string }
 
 export const WORKSHEET_LABELS: Record<WorksheetId, string> = {
-  'dictation-audio': 'Dictation Audio',
+  'dictation-audio': 'Dictation',
   'fill-in-the-blank': 'Fill-in-the-Blank',
   'word-search': 'Word Search',
   'crossword-puzzle': 'Crossword Puzzle',

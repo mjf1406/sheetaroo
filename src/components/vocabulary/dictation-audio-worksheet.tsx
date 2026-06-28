@@ -361,7 +361,7 @@ export function DictationAudioWorksheet({ words }: DictationAudioWorksheetProps)
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold">Dictation Audio</h2>
+        <h2 className="text-2xl font-semibold">Dictation</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Configure timing and voice, then generate audio from your vocabulary list.
         </p>
@@ -619,71 +619,72 @@ export function DictationAudioWorksheet({ words }: DictationAudioWorksheetProps)
                 ) : null}
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="self-start">
-          <CardHeader>
-            <CardTitle>Generate</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={() => void handleGenerate()}
-              disabled={
-                isGenerating ||
-                repeatsPerWord === '' ||
-                words.length === 0 ||
-                (voiceSource === 'own' && !myVoiceReady)
-              }
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                'Generate audio'
-              )}
-            </Button>
+            <div className="mt-6 space-y-4 border-t pt-4">
+              <Button
+                onClick={() => void handleGenerate()}
+                disabled={
+                  isGenerating ||
+                  repeatsPerWord === '' ||
+                  words.length === 0 ||
+                  (voiceSource === 'own' && !myVoiceReady)
+                }
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  'Generate audio'
+                )}
+              </Button>
 
-            {voiceSource === 'own' && words.length > 0 && !myVoiceReady && !isGenerating ? (
-              <p className="text-sm text-muted-foreground">
-                Record all required clips above before generating.
-              </p>
-            ) : null}
+              {voiceSource === 'own' && words.length > 0 && !myVoiceReady && !isGenerating ? (
+                <p className="text-sm text-muted-foreground">
+                  Record all required clips above before generating.
+                </p>
+              ) : null}
 
-            {isGenerating || progress > 0 ? (
-              <div className="space-y-2">
-                <Progress value={progress} />
-                {progressLabel ? (
-                  <p className="text-sm text-muted-foreground">{progressLabel}</p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {previewUrl ? (
-              <div className="space-y-3">
-                <audio controls src={previewUrl} className="w-full" />
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" asChild>
-                    <a href={previewUrl} download="dictation.wav">
-                      Download
-                    </a>
-                  </Button>
-                  <Button onClick={() => setSaveOpen(true)}>
-                    <Save className="size-4" />
-                    Save
-                  </Button>
+              {isGenerating || progress > 0 ? (
+                <div className="space-y-2">
+                  <Progress value={progress} />
+                  {progressLabel ? (
+                    <p className="text-sm text-muted-foreground">{progressLabel}</p>
+                  ) : null}
                 </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {previewUrl ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="self-start">
+            <CardHeader>
+              <CardTitle>Audio preview</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <audio controls src={previewUrl} className="w-full" />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" asChild>
+                  <a href={previewUrl} download="dictation.wav">
+                    Download
+                  </a>
+                </Button>
+                <Button onClick={() => setSaveOpen(true)}>
+                  <Save className="size-4" />
+                  Save
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {savedDictations ? <SavedDictations dictations={savedDictations} /> : null}
 

@@ -159,7 +159,7 @@ function VocabularyNavMenu() {
 
 export function Navbar() {
   return (
-    <header className="border-b">
+    <header className="border-b print:hidden">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-8">
         <div className="flex items-center gap-4">
           <Link
