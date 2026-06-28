@@ -47,7 +47,7 @@ export function WorksheetPreviewScaler({ children, measureKey }: WorksheetPrevie
   return (
     <div ref={containerRef} className="w-full overflow-x-hidden">
       <div
-        className="mx-auto"
+        className="mx-auto overflow-hidden"
         style={{
           width: layout.width > 0 ? layout.width : undefined,
           height: layout.height > 0 ? layout.height : undefined,
@@ -56,7 +56,7 @@ export function WorksheetPreviewScaler({ children, measureKey }: WorksheetPrevie
         <div
           ref={contentRef}
           className="inline-block origin-top-left"
-          style={layout.scale < 1 ? { transform: `scale(${layout.scale})` } : undefined}
+          style={{ transform: `scale(${layout.scale})` }}
         >
           {children}
         </div>

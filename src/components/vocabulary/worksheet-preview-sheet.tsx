@@ -13,12 +13,13 @@ import {
 import { WorksheetPreviewPanel } from '@/components/vocabulary/worksheet-preview-panel'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
-import type { PageSize } from '@/lib/worksheet-preview'
+import type { PageSize, PreviewableWorksheetId } from '@/lib/worksheet-preview'
 import type { WorksheetId } from '@/lib/vocabulary-types'
+import type { ShuffleSeeds } from '@/lib/word-order'
 
 type WorksheetPreviewSheetProps = {
   title: string
-  words: string[]
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
   checked: Record<WorksheetId, boolean>
   worksheetOrder: WorksheetId[]
   tiers: DifferentiationTier[]
@@ -27,6 +28,11 @@ type WorksheetPreviewSheetProps = {
   pageSize: PageSize
   onPageSizeChange: (pageSize: PageSize) => void
   fillInBlankWordBank: boolean
+  onShuffleApply: () => void
+  needsShuffleAudioWarning: boolean
+  dictationAudioVoiceSource: 'ai' | 'own' | null
+  shuffleSeeds: ShuffleSeeds
+  wordCount: number
 }
 
 export function WorksheetPreviewSheet({

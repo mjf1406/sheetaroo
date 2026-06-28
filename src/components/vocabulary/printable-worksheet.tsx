@@ -5,7 +5,6 @@ import type {
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import {
   defaultWorksheetTitle,
-  fillAnswerInSentence,
   fillInBlankInstructions,
   formatStudentSentence,
   getOrderedPreviewableWorksheets,
@@ -16,10 +15,11 @@ import {
   variantLabel,
 } from '@/lib/worksheet-preview'
 import { WORKSHEET_LABELS, type WorksheetId } from '@/lib/vocabulary-types'
+import { orderSentencesByWords } from '@/lib/word-order'
 
 type PrintableWorksheetProps = {
   title: string
-  words: string[]
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
   checked: Record<WorksheetId, boolean>
   worksheetOrder: WorksheetId[]
   tiers: DifferentiationTier[]
@@ -56,10 +56,14 @@ function WorksheetHeader({
   return (
     <div className="mb-6 border-b border-black/20 pb-4">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-bold leading-tight">{title}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="whitespace-nowrap text-lg font-bold leading-snug">
+            {title}
+          </h1>
           {subtitle ? (
-            <p className="mt-1 text-xs text-black/60">{subtitle}</p>
+            <p className="mt-1.5 text-xs leading-normal text-black/60">
+              {subtitle}
+            </p>
           ) : null}
         </div>
         <div className="shrink-0 space-y-2 text-right text-xs">
@@ -192,28 +196,32 @@ function FillInBlankSection({
 
 function WorksheetSections({
   sections,
-  words,
+  orderedWordsByWorksheet,
   gradeSentences,
   fillInBlankWordBank,
 }: {
   sections: PreviewableWorksheetId[]
-  words: string[]
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
   gradeSentences: FillInBlankSentence[]
   fillInBlankWordBank: boolean
 }) {
   const dictationIncluded = sections.includes('dictation-audio')
+  const dictationWords = orderedWordsByWorksheet['dictation-audio']
+  const fillInBlankWords = orderedWordsByWorksheet['fill-in-the-blank']
 
   return (
     <div className="space-y-8">
       {sections.map((sectionId) => {
         if (sectionId === 'dictation-audio') {
-          return <DictationSection key={sectionId} words={words} />
+          return (
+            <DictationSection key={sectionId} words={dictationWords} />
+          )
         }
         return (
           <FillInBlankSection
             key={sectionId}
             sentences={gradeSentences}
-            words={words}
+            words={fillInBlankWords}
             showWordBank={fillInBlankWordBank}
             dictationIncluded={dictationIncluded}
           />
@@ -225,26 +233,23 @@ function WorksheetSections({
 
 function AnswerKeyContent({
   sections,
-  words,
-  sentencesByGrade,
-  defaultGrade,
-  differentiationEnabled,
+  orderedWordsByWorksheet,
 }: {
   sections: PreviewableWorksheetId[]
-  words: string[]
-  sentencesByGrade: Map<GradeLevel, FillInBlankSentence[]>
-  defaultGrade: GradeLevel
-  differentiationEnabled: boolean
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
 }) {
+  const dictationWords = orderedWordsByWorksheet['dictation-audio']
+  const fillInBlankWords = orderedWordsByWorksheet['fill-in-the-blank']
+
   return (
     <div className="space-y-6">
-      {sections.includes('dictation-audio') && words.length > 0 ? (
+      {sections.includes('dictation-audio') && dictationWords.length > 0 ? (
         <div className="space-y-2">
           <h3 className="text-xs font-semibold">
             {WORKSHEET_LABELS['dictation-audio']}
           </h3>
           <ol className="space-y-1 text-xs">
-            {words.map((word, index) => (
+            {dictationWords.map((word, index) => (
               <li key={index}>
                 {index + 1}. {word}
               </li>
@@ -253,43 +258,19 @@ function AnswerKeyContent({
         </div>
       ) : null}
 
-      {sections.includes('fill-in-the-blank') ? (
-        <div className="space-y-4">
+      {sections.includes('fill-in-the-blank') &&
+      fillInBlankWords.length > 0 ? (
+        <div className="space-y-2">
           <h3 className="text-xs font-semibold">
             {WORKSHEET_LABELS['fill-in-the-blank']}
           </h3>
-          {differentiationEnabled ? (
-            Array.from(sentencesByGrade.entries()).map(
-              ([grade, gradeSentences]) =>
-                gradeSentences.length > 0 ? (
-                  <div key={grade} className="space-y-1">
-                    <p className="text-xs font-medium text-black/60">{grade}</p>
-                    <ol className="space-y-1 text-xs">
-                      {gradeSentences.map((sentence, index) => (
-                        <li key={sentence.id}>
-                          {index + 1}. {sentence.word} —{' '}
-                          {fillAnswerInSentence(
-                            sentence.sentence,
-                            sentence.word,
-                          )}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ) : null,
-            )
-          ) : (
-            <ol className="space-y-1 text-xs">
-              {(sentencesByGrade.get(defaultGrade) ?? []).map(
-                (sentence, index) => (
-                  <li key={sentence.id}>
-                    {index + 1}. {sentence.word} —{' '}
-                    {fillAnswerInSentence(sentence.sentence, sentence.word)}
-                  </li>
-                ),
-              )}
-            </ol>
-          )}
+          <ol className="space-y-1 text-xs">
+            {fillInBlankWords.map((word, index) => (
+              <li key={index}>
+                {index + 1}. {word}
+              </li>
+            ))}
+          </ol>
         </div>
       ) : null}
     </div>
@@ -298,7 +279,7 @@ function AnswerKeyContent({
 
 export function PrintableWorksheet({
   title,
-  words,
+  orderedWordsByWorksheet,
   checked,
   worksheetOrder,
   tiers,
@@ -313,26 +294,30 @@ export function PrintableWorksheet({
   const variants = getWorksheetVariants(tiers, differentiationEnabled)
   const defaultGrade = tiers[0]?.gradeLevel ?? '5'
   const multipleGrades = new Set(variants.map((v) => v.gradeLevel)).size > 1
+  const fillInBlankWords = orderedWordsByWorksheet['fill-in-the-blank']
 
   const sentencesByGrade = new Map<GradeLevel, FillInBlankSentence[]>()
   for (const variant of variants) {
     if (!sentencesByGrade.has(variant.gradeLevel)) {
       sentencesByGrade.set(
         variant.gradeLevel,
-        getSentencesForGrade(
-          sentences,
-          variant.gradeLevel,
-          differentiationEnabled,
-          defaultGrade,
+        orderSentencesByWords(
+          getSentencesForGrade(
+            sentences,
+            variant.gradeLevel,
+            differentiationEnabled,
+            defaultGrade,
+          ),
+          fillInBlankWords,
         ),
       )
     }
   }
 
   const hasAnswerKeyContent =
-    (sections.includes('dictation-audio') && words.length > 0) ||
-    (sections.includes('fill-in-the-blank') &&
-      Array.from(sentencesByGrade.values()).some((s) => s.length > 0))
+    (sections.includes('dictation-audio') &&
+      orderedWordsByWorksheet['dictation-audio'].length > 0) ||
+    (sections.includes('fill-in-the-blank') && fillInBlankWords.length > 0)
 
   if (sections.length === 0) {
     return (
@@ -352,11 +337,14 @@ export function PrintableWorksheet({
         {variants.map((variant, pageIndex) => {
           const gradeSentences =
             sentencesByGrade.get(variant.gradeLevel) ??
-            getSentencesForGrade(
-              sentences,
-              variant.gradeLevel,
-              differentiationEnabled,
-              defaultGrade,
+            orderSentencesByWords(
+              getSentencesForGrade(
+                sentences,
+                variant.gradeLevel,
+                differentiationEnabled,
+                defaultGrade,
+              ),
+              fillInBlankWords,
             )
           const subtitle = variantLabel(
             variant,
@@ -373,7 +361,7 @@ export function PrintableWorksheet({
               <div className="worksheet-page-body">
                 <WorksheetSections
                   sections={sections}
-                  words={words}
+                  orderedWordsByWorksheet={orderedWordsByWorksheet}
                   gradeSentences={gradeSentences}
                   fillInBlankWordBank={fillInBlankWordBank}
                 />
@@ -389,10 +377,7 @@ export function PrintableWorksheet({
           <h2 className="mb-4 text-sm font-bold">Answer Key</h2>
           <AnswerKeyContent
             sections={sections}
-            words={words}
-            sentencesByGrade={sentencesByGrade}
-            defaultGrade={defaultGrade}
-            differentiationEnabled={differentiationEnabled}
+            orderedWordsByWorksheet={orderedWordsByWorksheet}
           />
           <WorksheetGeneratedFooter />
         </div>

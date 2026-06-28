@@ -73,16 +73,9 @@ export function getSentencesForGrade(
   differentiationEnabled: boolean,
   defaultGrade: GradeLevel,
 ): FillInBlankSentence[] {
-  if (!differentiationEnabled) {
-    const manual = sentences.filter((s) => s.source === 'manual')
-    const ai = sentences.filter((s) => s.source === 'ai' && s.gradeLevel === defaultGrade)
-    return [...manual, ...ai]
-  }
+  const activeGrade = differentiationEnabled ? gradeLevel : defaultGrade
 
-  return sentences.filter((s) => {
-    if (s.source === 'ai') return s.gradeLevel === gradeLevel
-    return s.gradeLevel === gradeLevel
-  })
+  return sentences.filter((sentence) => sentence.gradeLevel === activeGrade)
 }
 
 export function variantLabel(

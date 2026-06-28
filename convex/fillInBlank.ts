@@ -59,9 +59,10 @@ export const generateBatch = action({
         )
       }
 
-      for (const item of gradeGroup.sentences) {
+      for (let index = 0; index < gradeGroup.sentences.length; index++) {
+        const item = gradeGroup.sentences[index]!
         results.push({
-          word: item.word,
+          word: args.entries[index]?.word ?? item.word,
           gradeLevel: expectedGrade,
           sentence: item.sentence,
         })

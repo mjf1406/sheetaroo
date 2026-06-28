@@ -19,6 +19,7 @@ import { requireAuth } from '@/lib/auth-guard'
 import {
   DEFAULT_WORKSHEET_ORDER,
   getOrderedBuilderWorksheets,
+  PREVIEWABLE_WORKSHEETS,
   type PageSize,
 } from '@/lib/worksheet-preview'
 import {
@@ -30,16 +31,53 @@ import {
   type WorksheetId,
   type WorksheetView,
 } from '@/lib/vocabulary-types'
+import {
+  buildOrderedWordsByWorksheet,
+  createDefaultShuffleSeeds,
+  createShuffleSeed,
+  type ShuffleSeeds,
+} from '@/lib/word-order'
 
 type VocabularySearch = {
   worksheet: WorksheetView
+}
+
+type BuilderSectionProps = {
+  entries: ReturnType<typeof parseVocabularyText>
+  tiers: DifferentiationTier[]
+  sentences: FillInBlankSentence[]
+  onSentencesChange: (sentences: FillInBlankSentence[]) => void
+  fillInBlankWordBank: boolean
+  onFillInBlankWordBankChange: (wordBank: boolean) => void
+  dictationWords: string[]
+  dictationSeed: number
+  dictationAudioStale: boolean
+  onDictationAudioGenerated: (meta: {
+    seed: number
+    voiceSource: 'ai' | 'own'
+  }) => void
+  onRestoreDictationOrder: () => void
 }
 
 const BUILDER_COMPONENTS: Record<
   WorksheetId,
   (props: BuilderSectionProps) => ReactNode
 > = {
-  'dictation-audio': ({ words }) => <DictationAudioWorksheet words={words} />,
+  'dictation-audio': ({
+    dictationWords,
+    dictationSeed,
+    dictationAudioStale,
+    onDictationAudioGenerated,
+    onRestoreDictationOrder,
+  }) => (
+    <DictationAudioWorksheet
+      words={dictationWords}
+      dictationSeed={dictationSeed}
+      audioStale={dictationAudioStale}
+      onAudioGenerated={onDictationAudioGenerated}
+      onRestoreOrder={onRestoreDictationOrder}
+    />
+  ),
   'fill-in-the-blank': ({
     entries,
     tiers,
@@ -77,16 +115,6 @@ const BUILDER_COMPONENTS: Record<
   ),
 }
 
-type BuilderSectionProps = {
-  words: string[]
-  entries: ReturnType<typeof parseVocabularyText>
-  tiers: DifferentiationTier[]
-  sentences: FillInBlankSentence[]
-  onSentencesChange: (sentences: FillInBlankSentence[]) => void
-  fillInBlankWordBank: boolean
-  onFillInBlankWordBankChange: (wordBank: boolean) => void
-}
-
 export const Route = createFileRoute('/vocabulary')({
   validateSearch: (search: Record<string, unknown>): VocabularySearch => ({
     worksheet: parseWorksheetView(search.worksheet),
@@ -114,6 +142,13 @@ function VocabularyPage() {
   >([])
   const [fillInBlankWordBank, setFillInBlankWordBank] = useState(false)
   const [pageSize, setPageSize] = useState<PageSize>('letter')
+  const [shuffleSeeds, setShuffleSeeds] = useState(createDefaultShuffleSeeds)
+  const [dictationAudioSeed, setDictationAudioSeed] = useState<number | null>(
+    null,
+  )
+  const [dictationAudioVoiceSource, setDictationAudioVoiceSource] = useState<
+    'ai' | 'own' | null
+  >(null)
 
   useEffect(() => {
     setChecked(worksheetSelectionFromView(worksheet))
@@ -121,32 +156,87 @@ function VocabularyPage() {
 
   const entries = useMemo(() => parseVocabularyText(wordText), [wordText])
   const words = useMemo(() => getWords(entries), [entries])
+  const orderedWordsByWorksheet = useMemo(
+    () => buildOrderedWordsByWorksheet(words, shuffleSeeds),
+    [words, shuffleSeeds],
+  )
   const orderedBuilders = useMemo(
     () => getOrderedBuilderWorksheets(worksheetOrder, checked),
     [worksheetOrder, checked],
   )
 
-  const previewProps = {
+  const dictationAudioStale =
+    dictationAudioSeed !== null &&
+    shuffleSeeds['dictation-audio'] !== dictationAudioSeed
+
+  useEffect(() => {
+    setDictationAudioSeed(null)
+    setDictationAudioVoiceSource(null)
+  }, [words])
+
+  function applyShuffle() {
+    setShuffleSeeds((current) => {
+      const next: ShuffleSeeds = { ...current }
+      for (const id of PREVIEWABLE_WORKSHEETS) {
+        if (checked[id]) {
+          next[id] = createShuffleSeed()
+        }
+      }
+      return next
+    })
+  }
+
+  function restoreDictationOrder() {
+    if (dictationAudioSeed === null) return
+    setShuffleSeeds((current) => ({
+      ...current,
+      'dictation-audio': dictationAudioSeed,
+    }))
+  }
+
+  function handleDictationAudioGenerated(meta: {
+    seed: number
+    voiceSource: 'ai' | 'own'
+  }) {
+    setDictationAudioSeed(meta.seed)
+    setDictationAudioVoiceSource(meta.voiceSource)
+  }
+
+  const printableProps = {
     title: worksheetTitle,
-    words,
+    orderedWordsByWorksheet,
     checked,
     worksheetOrder,
     tiers,
     differentiationEnabled,
     sentences: fillInBlankSentences,
     pageSize,
-    onPageSizeChange: setPageSize,
     fillInBlankWordBank,
   }
 
+  const previewProps = {
+    ...printableProps,
+    onPageSizeChange: setPageSize,
+    onShuffleApply: applyShuffle,
+    needsShuffleAudioWarning:
+      checked['dictation-audio'] && dictationAudioSeed !== null,
+    dictationAudioVoiceSource,
+    shuffleSeeds,
+    wordCount: words.length,
+  }
+
   const builderProps: BuilderSectionProps = {
-    words,
     entries,
     tiers,
     sentences: fillInBlankSentences,
     onSentencesChange: setFillInBlankSentences,
     fillInBlankWordBank,
     onFillInBlankWordBankChange: setFillInBlankWordBank,
+    dictationWords: orderedWordsByWorksheet['dictation-audio'],
+    dictationSeed: shuffleSeeds['dictation-audio'],
+    dictationAudioStale,
+    onDictationAudioGenerated: handleDictationAudioGenerated,
+    onRestoreDictationOrder: restoreDictationOrder,
   }
 
   function handleCheckedChange(id: WorksheetId, value: boolean) {
@@ -207,7 +297,7 @@ function VocabularyPage() {
         aria-hidden="true"
         className="pointer-events-none fixed -left-[9999px] top-0"
       >
-        <PrintableWorksheet {...previewProps} isPrintRoot />
+        <PrintableWorksheet {...printableProps} isPrintRoot />
       </div>
     </>
   )

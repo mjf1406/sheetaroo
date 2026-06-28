@@ -94,9 +94,19 @@ function validateMyVoice(input: {
 
 type DictationAudioWorksheetProps = {
   words: string[]
+  dictationSeed: number
+  audioStale: boolean
+  onAudioGenerated: (meta: { seed: number; voiceSource: 'ai' | 'own' }) => void
+  onRestoreOrder: () => void
 }
 
-export function DictationAudioWorksheet({ words }: DictationAudioWorksheetProps) {
+export function DictationAudioWorksheet({
+  words,
+  dictationSeed,
+  audioStale,
+  onAudioGenerated,
+  onRestoreOrder,
+}: DictationAudioWorksheetProps) {
   const [repeatsPerWord, setRepeatsPerWord] = useState<number | ''>(
     DEFAULT_SETTINGS.repeatsPerWord,
   )
@@ -313,6 +323,7 @@ export function DictationAudioWorksheet({ words }: DictationAudioWorksheetProps)
       setPreviewUrl(url)
       setProgress(100)
       setProgressLabel('Done')
+      onAudioGenerated({ seed: dictationSeed, voiceSource })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
@@ -657,6 +668,24 @@ export function DictationAudioWorksheet({ words }: DictationAudioWorksheetProps)
               ) : null}
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+              {audioStale ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+                  <p>
+                    Audio no longer matches the current word order. Regenerate audio
+                    or restore the previous order.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={onRestoreOrder}
+                  >
+                    Restore previous order
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </CardContent>
         </Card>
