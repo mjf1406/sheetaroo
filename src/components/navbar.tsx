@@ -4,6 +4,7 @@ import { useQuery } from 'convex/react'
 import { LogOut } from 'lucide-react'
 
 import { ThemeToggle } from '@/components/theme-toggle'
+import { APP_NAME, LOGO_SM } from '@/lib/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -182,13 +183,13 @@ export function Navbar() {
             className="flex items-center gap-2 text-lg font-semibold"
           >
             <img
-              src="/brand/ai-co-teacher%20logo%20125x125.webp"
-              alt=""
+              src={LOGO_SM}
+              alt={APP_NAME}
               width={28}
               height={28}
               className="size-7 rounded-sm"
             />
-            AI Co-teacher
+            {APP_NAME}
           </Link>
           <VocabularyNavMenu />
         </div>

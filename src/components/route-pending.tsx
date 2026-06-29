@@ -1,3 +1,5 @@
+import { LOGO_LG } from '@/lib/brand'
+
 export function RoutePending() {
   return (
     <div
@@ -6,7 +8,7 @@ export function RoutePending() {
       aria-label="Loading"
     >
       <img
-        src="/brand/ai-co-teacher%20logo%20500x500.webp"
+        src={LOGO_LG}
         alt=""
         className="size-20 animate-spin"
         aria-hidden

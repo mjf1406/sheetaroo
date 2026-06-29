@@ -1,5 +1,5 @@
 {
-  "projectName": "ai-worker",
+  "projectName": "sheetaroo",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "bun",

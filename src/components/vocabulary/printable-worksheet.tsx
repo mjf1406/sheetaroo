@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 
+import { APP_NAME, LOGO_SM } from '@/lib/brand'
 import type {
   DifferentiationTier,
   GradeLevel,
@@ -65,13 +66,13 @@ function WorksheetGeneratedFooter() {
     <footer className="worksheet-page-footer worksheet-generated-footer mt-8 flex items-center justify-center gap-2 text-[10px] text-black/50">
       <span>Generated with</span>
       <img
-        src="/brand/ai-co-teacher%20logo%20125x125.webp"
-        alt=""
+        src={LOGO_SM}
+        alt={APP_NAME}
         width={16}
         height={16}
         className="size-4 rounded-sm"
       />
-      <span>AI Co-teacher</span>
+      <span>{APP_NAME}</span>
     </footer>
   )
 }
