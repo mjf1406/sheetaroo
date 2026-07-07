@@ -9,6 +9,20 @@ const SECTION_GAP_PX = 32
 const PDF_UNIT_GAP_PX = 12
 const PREFIX_LIST_GAP_PX = 12
 
+const CONTINUED_SECTION_LABELS: Record<string, string> = {
+  'word-forms': WORKSHEET_LABELS['word-forms'],
+  'word-stories-part-1': WORKSHEET_LABELS['word-stories'],
+  'word-stories-definitions': 'Part 1B: Definition Match',
+  'word-stories-cloze': 'Part 2: Cloze Stories',
+  'answer-word-stories-part-1': `${WORKSHEET_LABELS['word-stories']} — Answers`,
+  'answer-word-stories-definitions': 'Part 1B: Definition Match — Answers',
+  'answer-word-stories-cloze': 'Part 2: Cloze Stories — Answers',
+}
+
+function getContinuedSectionLabel(sectionId: string): string | null {
+  return CONTINUED_SECTION_LABELS[sectionId] ?? null
+}
+
 const PDF_PAGE_MARGIN_IN = {
   top: 0.35,
   right: 0.45,
@@ -175,7 +189,7 @@ function getSectionPrefix(section: HTMLElement): HTMLElement | null {
   return section.querySelector<HTMLElement>(':scope .worksheet-section-prefix')
 }
 
-function buildPrintUnits(
+export function buildPrintUnits(
   sections: HTMLElement[],
   bodyBudget: number,
 ): PrintUnit[] {
@@ -267,19 +281,38 @@ function renderPrintUnit(
   const firstNumber = Number(
     unit.units[0]?.getAttribute('data-sentence-number') ?? '1',
   )
-  if (!unit.prefix && isFirstInBucket && firstNumber > 1) {
+  const sectionId = unit.section.getAttribute('data-section-id') ?? ''
+  const continuedLabel = getContinuedSectionLabel(sectionId)
+  const isListUnit = unit.units[0]?.tagName === 'LI'
+  const shouldShowContinued =
+    !unit.prefix &&
+    isFirstInBucket &&
+    continuedLabel !== null &&
+    (firstNumber > 1 || !isListUnit)
+
+  if (shouldShowContinued) {
     const heading = document.createElement('h2')
     heading.className = 'text-sm font-semibold'
-    heading.textContent = `${WORKSHEET_LABELS['word-forms']} (continued)`
+    heading.textContent = `${continuedLabel} (continued)`
     inner.appendChild(heading)
   }
 
-  const list = document.createElement('ol')
-  list.className = 'space-y-3'
-  for (const pdfUnit of unit.units) {
-    list.appendChild(pdfUnit.cloneNode(true))
+  const useListLayout = unit.units.every((pdfUnit) => pdfUnit.tagName === 'LI')
+  if (useListLayout) {
+    const list = document.createElement('ol')
+    list.className = 'space-y-3'
+    for (const pdfUnit of unit.units) {
+      list.appendChild(pdfUnit.cloneNode(true))
+    }
+    inner.appendChild(list)
+  } else {
+    const container = document.createElement('div')
+    container.className = 'space-y-4'
+    for (const pdfUnit of unit.units) {
+      container.appendChild(pdfUnit.cloneNode(true))
+    }
+    inner.appendChild(container)
   }
-  inner.appendChild(list)
   wrapper.appendChild(inner)
   return wrapper
 }

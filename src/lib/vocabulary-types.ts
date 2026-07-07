@@ -5,6 +5,7 @@ export const WORKSHEET_IDS = [
   'word-search',
   'fill-in-the-blank',
   'word-forms',
+  'word-stories',
 ] as const
 
 export type WorksheetId = (typeof WORKSHEET_IDS)[number]
@@ -19,7 +20,12 @@ export const WORKSHEET_LABELS: Record<WorksheetId, string> = {
   'word-search': 'Word Search',
   'crossword-puzzle': 'Crossword Puzzle',
   'word-forms': 'Word Forms',
+  'word-stories': 'Word Stories',
 }
+
+export const WORKSHEET_IDS_BY_LABEL: WorksheetId[] = [...WORKSHEET_IDS].sort(
+  (left, right) => WORKSHEET_LABELS[left].localeCompare(WORKSHEET_LABELS[right]),
+)
 
 export const WORKSHEET_DESCRIPTIONS: Record<WorksheetId, string> = {
   'dictation-audio': 'Generate dictation audio and a matching worksheet',
@@ -28,6 +34,7 @@ export const WORKSHEET_DESCRIPTIONS: Record<WorksheetId, string> = {
   'word-search': 'Customizable word search puzzle',
   'fill-in-the-blank': 'Sentences with blanks for vocabulary practice',
   'word-forms': 'Practice different forms of each word',
+  'word-stories': 'Stories using vocabulary words with definition matching and cloze practice',
 }
 
 export function getWorksheetPath(id: WorksheetId): string {
@@ -43,7 +50,7 @@ export function parseWorksheetId(slug: string): WorksheetId | null {
 
 export const VOCABULARY_NAV_ITEMS: Array<{ label: string; view: WorksheetView }> = [
   { label: 'All', view: 'all' },
-  ...WORKSHEET_IDS.map((id) => ({ label: WORKSHEET_LABELS[id], view: id })),
+  ...WORKSHEET_IDS_BY_LABEL.map((id) => ({ label: WORKSHEET_LABELS[id], view: id })),
 ]
 
 const VALID_VIEWS = new Set<string>(['all', ...WORKSHEET_IDS])

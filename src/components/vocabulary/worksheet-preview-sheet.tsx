@@ -15,6 +15,11 @@ import type { CrosswordClue } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
+import type {
+  WordStory,
+  WordStoryDefinition,
+  WordStorySettings,
+} from '@/lib/word-stories-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import type { PageSize, PreviewableWorksheetId } from '@/lib/worksheet-preview'
 import type { WorksheetId } from '@/lib/vocabulary-types'
@@ -41,6 +46,10 @@ type WorksheetPreviewSheetProps = {
   wordForms: WordFormEntry[]
   crosswordClues: CrosswordClue[]
   crosswordSeed: number
+  wordStories: WordStory[]
+  wordStoryDefinitions: WordStoryDefinition[]
+  wordStorySettings: WordStorySettings
+  wordStoryDefinitionSeed: number
 }
 
 export function WorksheetPreviewSheet({

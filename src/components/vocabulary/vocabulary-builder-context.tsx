@@ -23,6 +23,12 @@ import { DEFAULT_WORD_SEARCH_SETTINGS } from '@/lib/word-search-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
 import {
+  DEFAULT_WORD_STORY_SETTINGS,
+  type WordStory,
+  type WordStoryDefinition,
+  type WordStorySettings,
+} from '@/lib/word-stories-types'
+import {
   PREVIEWABLE_WORKSHEETS,
   type PageSize,
 } from '@/lib/worksheet-preview'
@@ -68,6 +74,11 @@ type VocabularyBuilderContextValue = {
     wordForms: WordFormEntry[]
     crosswordClues: CrosswordClue[]
     crosswordSeed: number
+    wordStories: WordStory[]
+    wordStoryDefinitions: WordStoryDefinition[]
+    wordStorySettings: WordStorySettings
+    wordStoryAssignmentSeed: number
+    wordStoryDefinitionSeed: number
   }
   getPreviewProps: (
     checked: Record<WorksheetId, boolean>,
@@ -113,6 +124,16 @@ export function VocabularyBuilderProvider({ children }: { children: ReactNode })
     [],
   )
   const [crosswordClues, setCrosswordClues] = useState<CrosswordClue[]>([])
+  const [wordStories, setWordStories] = useState<WordStory[]>([])
+  const [wordStoryDefinitions, setWordStoryDefinitions] = useState<
+    WordStoryDefinition[]
+  >([])
+  const [wordStorySettings, setWordStorySettings] = useState(
+    DEFAULT_WORD_STORY_SETTINGS,
+  )
+  const [wordStoryAssignmentSeed, setWordStoryAssignmentSeed] = useState(() =>
+    createShuffleSeed(),
+  )
 
   const entries = useMemo(() => parseVocabularyText(wordText), [wordText])
   const words = useMemo(() => getWords(entries), [entries])
@@ -136,6 +157,9 @@ export function VocabularyBuilderProvider({ children }: { children: ReactNode })
     setWordForms([])
     setWordFormSentences([])
     setCrosswordClues([])
+    setWordStories([])
+    setWordStoryDefinitions([])
+    setWordStoryAssignmentSeed(createShuffleSeed())
   }, [words])
 
   function applyShuffle(checked: Record<WorksheetId, boolean>) {
@@ -189,6 +213,13 @@ export function VocabularyBuilderProvider({ children }: { children: ReactNode })
     onCrosswordCluesChange: setCrosswordClues,
     crosswordWords: orderedWordsByWorksheet['crossword-puzzle'],
     crosswordSeed: shuffleSeeds['crossword-puzzle'],
+    wordStories,
+    onWordStoriesChange: setWordStories,
+    wordStoryDefinitions,
+    onWordStoryDefinitionsChange: setWordStoryDefinitions,
+    wordStorySettings,
+    onWordStorySettingsChange: setWordStorySettings,
+    wordStoryAssignmentSeed,
   }
 
   function getPrintableProps(
@@ -212,6 +243,11 @@ export function VocabularyBuilderProvider({ children }: { children: ReactNode })
       wordForms,
       crosswordClues: effectiveCrosswordClues,
       crosswordSeed: shuffleSeeds['crossword-puzzle'],
+      wordStories,
+      wordStoryDefinitions,
+      wordStorySettings,
+      wordStoryAssignmentSeed,
+      wordStoryDefinitionSeed: wordStoryAssignmentSeed,
     }
   }
 

@@ -6,12 +6,18 @@ import { DrawOneWordWorksheet } from '@/components/vocabulary/draw-one-word-work
 import { FillInBlankWorksheet } from '@/components/vocabulary/fill-in-blank-worksheet'
 import { WordFormsWorksheet } from '@/components/vocabulary/word-forms-worksheet'
 import { WordSearchWorksheet } from '@/components/vocabulary/word-search-worksheet'
+import { WordStoriesWorksheet } from '@/components/vocabulary/word-stories-worksheet'
 import type { CrosswordClue } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import { parseVocabularyText, type WorksheetId } from '@/lib/vocabulary-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
+import type {
+  WordStory,
+  WordStoryDefinition,
+  WordStorySettings,
+} from '@/lib/word-stories-types'
 
 export type BuilderSectionProps = {
   entries: ReturnType<typeof parseVocabularyText>
@@ -39,6 +45,13 @@ export type BuilderSectionProps = {
   onCrosswordCluesChange: (clues: CrosswordClue[]) => void
   crosswordWords: string[]
   crosswordSeed: number
+  wordStories: WordStory[]
+  onWordStoriesChange: (stories: WordStory[]) => void
+  wordStoryDefinitions: WordStoryDefinition[]
+  onWordStoryDefinitionsChange: (definitions: WordStoryDefinition[]) => void
+  wordStorySettings: WordStorySettings
+  onWordStorySettingsChange: (settings: WordStorySettings) => void
+  wordStoryAssignmentSeed: number
 }
 
 export const BUILDER_COMPONENTS: Record<
@@ -121,6 +134,29 @@ export const BUILDER_COMPONENTS: Record<
       onWordFormsChange={onWordFormsChange}
       wordFormSentences={wordFormSentences}
       onWordFormSentencesChange={onWordFormSentencesChange}
+    />
+  ),
+  'word-stories': ({
+    entries,
+    tiers,
+    wordStories,
+    onWordStoriesChange,
+    wordStoryDefinitions,
+    onWordStoryDefinitionsChange,
+    wordStorySettings,
+    onWordStorySettingsChange,
+    wordStoryAssignmentSeed,
+  }) => (
+    <WordStoriesWorksheet
+      entries={entries}
+      tiers={tiers}
+      wordStories={wordStories}
+      onWordStoriesChange={onWordStoriesChange}
+      wordStoryDefinitions={wordStoryDefinitions}
+      onWordStoryDefinitionsChange={onWordStoryDefinitionsChange}
+      wordStorySettings={wordStorySettings}
+      onWordStorySettingsChange={onWordStorySettingsChange}
+      wordStoryAssignmentSeed={wordStoryAssignmentSeed}
     />
   ),
 }

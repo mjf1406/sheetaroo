@@ -170,6 +170,11 @@ html body[data-scroll-locked] {
   page-break-inside: avoid;
 }
 
+.worksheet-pdf-unit {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 .worksheet-print-root[data-page-size='letter'] .worksheet-page {
   width: 8.5in;
   min-height: 11in;

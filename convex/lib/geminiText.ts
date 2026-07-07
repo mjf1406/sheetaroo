@@ -782,3 +782,295 @@ Return JSON only in this shape:
   ]
 }`
 }
+
+export type GeminiWordStoryItem = {
+  storyIndex: number
+  title: string
+  storyText: string
+  clozeText: string
+  words: string[]
+  clozeWords: string[]
+}
+
+export type GeminiWordStoryDefinition = {
+  word: string
+  definition: string
+}
+
+export type GeminiWordStoryGradeBatch = {
+  gradeLevel: string
+  stories: GeminiWordStoryItem[]
+  definitions: GeminiWordStoryDefinition[]
+}
+
+type GeminiWordStoriesResponse = {
+  grades: GeminiWordStoryGradeBatch[]
+}
+
+function validateWordStoryItem(item: unknown): item is GeminiWordStoryItem {
+  if (
+    typeof item !== 'object' ||
+    item === null ||
+    typeof (item as GeminiWordStoryItem).storyIndex !== 'number' ||
+    typeof (item as GeminiWordStoryItem).title !== 'string' ||
+    typeof (item as GeminiWordStoryItem).storyText !== 'string' ||
+    typeof (item as GeminiWordStoryItem).clozeText !== 'string' ||
+    !Array.isArray((item as GeminiWordStoryItem).words) ||
+    !Array.isArray((item as GeminiWordStoryItem).clozeWords)
+  ) {
+    return false
+  }
+
+  const story = item as GeminiWordStoryItem
+  if (
+    story.title.trim().length === 0 ||
+    story.storyText.trim().length === 0 ||
+    story.clozeText.trim().length === 0
+  ) {
+    return false
+  }
+
+  return (
+    story.words.every((word) => typeof word === 'string' && word.trim().length > 0) &&
+    story.clozeWords.every((word) => typeof word === 'string' && word.trim().length > 0)
+  )
+}
+
+function validateWordStoryDefinition(
+  item: unknown,
+): item is GeminiWordStoryDefinition {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    typeof (item as GeminiWordStoryDefinition).word === 'string' &&
+    typeof (item as GeminiWordStoryDefinition).definition === 'string' &&
+    (item as GeminiWordStoryDefinition).word.trim().length > 0 &&
+    (item as GeminiWordStoryDefinition).definition.trim().length > 0
+  )
+}
+
+function parseWordStoriesGeminiJson(text: string): GeminiWordStoriesResponse {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('Gemini returned invalid JSON')
+  }
+
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('grades' in parsed) ||
+    !Array.isArray((parsed as GeminiWordStoriesResponse).grades)
+  ) {
+    throw new Error('Gemini response missing grades array')
+  }
+
+  for (const grade of (parsed as GeminiWordStoriesResponse).grades) {
+    if (
+      typeof grade !== 'object' ||
+      grade === null ||
+      typeof grade.gradeLevel !== 'string' ||
+      !Array.isArray(grade.stories) ||
+      !Array.isArray(grade.definitions)
+    ) {
+      throw new Error('Gemini response has invalid word story grade shape')
+    }
+    for (const story of grade.stories) {
+      if (!validateWordStoryItem(story)) {
+        throw new Error('Gemini response has invalid word story item shape')
+      }
+    }
+    for (const definition of grade.definitions) {
+      if (!validateWordStoryDefinition(definition)) {
+        throw new Error('Gemini response has invalid word story definition shape')
+      }
+    }
+  }
+
+  return parsed as GeminiWordStoriesResponse
+}
+
+export async function generateGeminiWordStoriesJson(
+  prompt: string,
+): Promise<GeminiWordStoriesResponse> {
+  const text = await fetchGeminiJson(prompt)
+  return parseWordStoriesGeminiJson(text)
+}
+
+function formatStoryAssignments(
+  assignments: Array<{ storyIndex: number; words: string[] }>,
+): string {
+  return assignments
+    .map(
+      (assignment) =>
+        `Story ${assignment.storyIndex + 1} (storyIndex: ${assignment.storyIndex}): ${assignment.words.join(', ')}`,
+    )
+    .join('\n')
+}
+
+function formatStoryPairAssignments(
+  assignments: Array<{ storyIndex: number; words: string[] }>,
+  clozeAssignments: Array<{ storyIndex: number; words: string[] }>,
+): string {
+  return assignments
+    .map((assignment) => {
+      const clozeAssignment = clozeAssignments.find(
+        (item) => item.storyIndex === assignment.storyIndex,
+      )
+      const clozeWords = clozeAssignment?.words ?? assignment.words
+      return `Story ${assignment.storyIndex + 1} (storyIndex: ${assignment.storyIndex}):
+  Part 1 context words: ${assignment.words.join(', ')}
+  Part 2 cloze words: ${clozeWords.join(', ')}`
+    })
+    .join('\n')
+}
+
+function wordStoryRulesForGrade(
+  gradeLabel: string,
+  assignments: Array<{ storyIndex: number; words: string[] }>,
+  clozeAssignments: Array<{ storyIndex: number; words: string[] }>,
+  allowRepeatWithinStory: boolean,
+  wordsNeedingDefinitions: Array<{ word: string }>,
+): string {
+  const repeatRule = allowRepeatWithinStory
+    ? 'You may use each assigned word more than once within a story if it fits naturally.'
+    : 'Use each assigned vocabulary word at least once and do not repeat words within the same story.'
+
+  const definitionRule =
+    wordsNeedingDefinitions.length > 0
+      ? `\nAlso write student-friendly definitions for these words (do not include the vocabulary word in the definition): ${wordsNeedingDefinitions.map((entry) => `"${entry.word}"`).join(', ')}`
+      : ''
+
+  return `Write exactly ${assignments.length} story pairs for ${gradeLabel}.
+
+Story assignments:
+${formatStoryPairAssignments(assignments, clozeAssignments)}
+
+For each story:
+- Write a short, engaging Part 1 context story (3–8 sentences) titled appropriately for ${gradeLabel}
+- Use only the Part 1 context words in the context story
+- Mark each vocabulary word occurrence with double curly braces, e.g. {{compare}}
+- ${repeatRule}
+- Write a separate NEW Part 2 cloze story (different plot and sentences) using only the Part 2 cloze words
+- Part 2 should use a different mix of vocabulary words than Part 1 when possible so students cannot match by story order
+- Mark each vocabulary word in the cloze story with {{word}} as well
+- The cloze story must be different from the context story${definitionRule}`
+}
+
+export function buildWordStoriesBatchPrompt(input: {
+  gradeLevels: string[]
+  assignments: Array<{ storyIndex: number; words: string[] }>
+  clozeAssignments: Array<{ storyIndex: number; words: string[] }>
+  allowRepeatWithinStory: boolean
+  entries: Array<{ word: string; definition?: string }>
+}): string {
+  const wordsNeedingDefinitions = input.entries.filter((entry) => !entry.definition?.trim())
+  const wordList = formatWordList(input.entries)
+  const gradeSections = input.gradeLevels
+    .map((gradeLevel) => {
+      const gradeLabel = formatGradeForPrompt(gradeLevel)
+      return `### ${gradeLabel} (gradeLevel: "${gradeLevel}")
+${wordStoryRulesForGrade(
+  gradeLabel,
+  input.assignments,
+  input.clozeAssignments,
+  input.allowRepeatWithinStory,
+  wordsNeedingDefinitions,
+)}`
+    })
+    .join('\n\n')
+
+  return `You are a teacher creating vocabulary word story worksheets for English learners.
+
+Vocabulary words:
+${wordList}
+
+Generate stories for each grade level below. Stories should differ by grade-appropriate vocabulary, sentence length, and complexity.
+
+${gradeSections}
+
+Return JSON only in this shape:
+{
+  "grades": [
+    {
+      "gradeLevel": "5",
+      "stories": [
+        {
+          "storyIndex": 0,
+          "title": "A Day at the Market",
+          "storyText": "Maya went to the market to {{compare}} prices.",
+          "clozeText": "At the store, she needed to {{observe}} two fruits.",
+          "words": ["compare"],
+          "clozeWords": ["observe"]
+        }
+      ],
+      "definitions": [
+        { "word": "compare", "definition": "to look at two or more things to see how they are alike or different" }
+      ]
+    }
+  ]
+}`
+}
+
+export function buildWordStoryRegeneratePrompt(input: {
+  gradeLevel: string
+  storyIndex: number
+  title?: string
+  words: string[]
+  clozeWords: string[]
+  allowRepeatWithinStory: boolean
+  entries: Array<{ word: string; definition?: string }>
+  currentStoryText?: string
+  currentClozeText?: string
+}): string {
+  const gradeLabel = formatGradeForPrompt(input.gradeLevel)
+  const definitionList = formatWordList(
+    input.entries.filter(
+      (entry) =>
+        input.words.includes(entry.word) || input.clozeWords.includes(entry.word),
+    ),
+  )
+  const repeatRule = input.allowRepeatWithinStory
+    ? 'You may use each assigned word more than once within a story if it fits naturally.'
+    : 'Use each assigned vocabulary word at least once and do not repeat words within the same story.'
+  const avoidLine =
+    input.currentStoryText && input.currentClozeText
+      ? `\nWrite different stories than these:\nContext story: "${input.currentStoryText}"\nCloze story: "${input.currentClozeText}"`
+      : ''
+
+  return `You are a teacher creating one vocabulary word story pair for English learners.
+
+Grade level: ${gradeLabel}
+Story index: ${input.storyIndex}
+Part 1 context words: ${input.words.join(', ')}
+Part 2 cloze words: ${input.clozeWords.join(', ')}
+Vocabulary details:
+${definitionList}${avoidLine}
+
+Write one story pair:
+- A short, engaging Part 1 context story with a title appropriate for ${gradeLabel}
+- A separate NEW Part 2 cloze story (different plot) using only the Part 2 cloze words
+- Mark each vocabulary word with {{word}} in the matching story only
+- ${repeatRule}
+
+Return JSON only in this shape:
+{
+  "grades": [
+    {
+      "gradeLevel": "${input.gradeLevel}",
+      "stories": [
+        {
+          "storyIndex": ${input.storyIndex},
+          "title": "...",
+          "storyText": "...",
+          "clozeText": "...",
+          "words": [${input.words.map((word) => `"${word}"`).join(', ')}],
+          "clozeWords": [${input.clozeWords.map((word) => `"${word}"`).join(', ')}]
+        }
+      ],
+      "definitions": []
+    }
+  ]
+}`
+}

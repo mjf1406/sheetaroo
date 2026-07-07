@@ -10,6 +10,7 @@ export const PREVIEWABLE_WORKSHEETS = [
   'word-search',
   'crossword-puzzle',
   'word-forms',
+  'word-stories',
 ] as const
 export type PreviewableWorksheetId = (typeof PREVIEWABLE_WORKSHEETS)[number]
 
@@ -194,4 +195,16 @@ export function wordFormInstructions(
   dictationIncluded: boolean,
 ): string {
   return wordFormInstructionSteps(showWordBank, dictationIncluded).join(' ')
+}
+
+export function wordStoriesPart1Instructions(): string {
+  return 'Read each story below. The vocabulary words are underlined. After reading, match each definition in Part 1B to the correct word.'
+}
+
+export function wordStoriesDefinitionMatchInstructions(): string {
+  return 'Read the definitions below. Write the correct vocabulary word on the line next to each definition.'
+}
+
+export function wordStoriesClozeInstructions(): string {
+  return 'Read each new story below. The stories use a different mix of vocabulary words than Part 1 and appear in a different order. Fill in each blank with the correct word from the word bank.'
 }

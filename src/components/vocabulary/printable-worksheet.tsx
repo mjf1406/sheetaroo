@@ -14,6 +14,15 @@ import {
   type WordFormSentence,
   type WordFormsTableModel,
 } from '@/lib/word-forms-types'
+import {
+  buildClozeWordBank,
+  buildDefinitionList,
+  orderStoriesForPart2,
+  parseWordTokens,
+  type WordStory,
+  type WordStoryDefinition,
+  type WordStorySettings,
+} from '@/lib/word-stories-types'
 import { generateCrossword } from '@/lib/crossword-generator'
 import {
   formatCrosswordClueText,
@@ -33,6 +42,9 @@ import {
   getWorksheetVariants,
   wordFormInstructionSteps,
   wordSearchInstructions,
+  wordStoriesClozeInstructions,
+  wordStoriesDefinitionMatchInstructions,
+  wordStoriesPart1Instructions,
   type PreviewableWorksheetId,
   type PageSize,
   variantLabel,
@@ -58,6 +70,10 @@ type PrintableWorksheetProps = {
   wordFormSentences: WordFormSentence[]
   wordFormShuffleSeed: number
   wordForms: WordFormEntry[]
+  wordStories: WordStory[]
+  wordStoryDefinitions: WordStoryDefinition[]
+  wordStorySettings: WordStorySettings
+  wordStoryDefinitionSeed: number
   isPrintRoot?: boolean
 }
 
@@ -647,6 +663,261 @@ function WordFormSentenceAnswerList({
   )
 }
 
+function StoryTextContent({
+  text,
+  mode,
+}: {
+  text: string
+  mode: 'underline' | 'blank' | 'answer'
+}) {
+  const segments = parseWordTokens(text)
+
+  return (
+    <>
+      {segments.map((segment, index) => {
+        if (segment.type === 'text') {
+          return <span key={index}>{segment.value}</span>
+        }
+        if (mode === 'underline') {
+          return (
+            <span key={index} className="underline">
+              {segment.value}
+            </span>
+          )
+        }
+        if (mode === 'blank') {
+          return <span key={index}>_____</span>
+        }
+        return (
+          <span key={index} className="font-medium">
+            {segment.value}
+          </span>
+        )
+      })}
+    </>
+  )
+}
+
+function WordStoriesDefinitionMatchList({
+  definitions,
+  showAnswers = false,
+}: {
+  definitions: WordStoryDefinition[]
+  showAnswers?: boolean
+}) {
+  if (definitions.length === 0) return null
+
+  return (
+    <ol className="space-y-3">
+      {definitions.map((item, index) => (
+        <li key={`${item.word}-${index}`} className="text-xs leading-relaxed">
+          <span className="font-medium">{index + 1}. </span>
+          {item.definition}
+          {showAnswers ? (
+            <span className="font-medium"> — {item.word}</span>
+          ) : (
+            <span className="ml-2 inline-block min-w-24 border-b border-black/40" />
+          )}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+type WordStoriesSharedProps = {
+  stories: WordStory[]
+  definitions: WordStoryDefinition[]
+  settings: WordStorySettings
+  definitionSeed: number
+  showAnswers?: boolean
+}
+
+function getWordStoriesData({
+  stories,
+  definitions,
+  definitionSeed,
+}: Pick<WordStoriesSharedProps, 'stories' | 'definitions' | 'definitionSeed'>) {
+  const sortedStories = [...stories].sort(
+    (left, right) => left.storyIndex - right.storyIndex,
+  )
+  return {
+    sortedStories,
+    part2Stories: orderStoriesForPart2(sortedStories, definitionSeed),
+    definitionList: buildDefinitionList(sortedStories, definitions, definitionSeed),
+    clozeWordBank: buildClozeWordBank(sortedStories, definitionSeed),
+    hasContent: sortedStories.length > 0,
+  }
+}
+
+function WordStoriesPart1Section({
+  stories,
+  definitions,
+  definitionSeed,
+  showAnswers = false,
+}: Pick<
+  WordStoriesSharedProps,
+  'stories' | 'definitions' | 'definitionSeed' | 'showAnswers'
+>) {
+  const { sortedStories, hasContent } = getWordStoriesData({
+    stories,
+    definitions,
+    definitionSeed,
+  })
+
+  return (
+    <section className="space-y-3">
+      <div className="worksheet-section-prefix space-y-3">
+        <h2 className="text-sm font-semibold">{WORKSHEET_LABELS['word-stories']}</h2>
+        <p className="text-xs leading-relaxed text-black/70">
+          {wordStoriesPart1Instructions()}
+        </p>
+        {!hasContent ? (
+          <p className="text-xs italic text-black/50">
+            Generate or add word stories to preview this section.
+          </p>
+        ) : null}
+      </div>
+      {hasContent
+        ? sortedStories.map((story, index) => (
+            <article key={story.id} className="worksheet-pdf-unit space-y-2">
+              <h3 className="text-xs font-semibold">
+                Story {index + 1}: {story.title}
+              </h3>
+              <p className="text-xs leading-relaxed">
+                <StoryTextContent
+                  text={story.storyText}
+                  mode={showAnswers ? 'answer' : 'underline'}
+                />
+              </p>
+            </article>
+          ))
+        : null}
+    </section>
+  )
+}
+
+function WordStoriesDefinitionsSection({
+  stories,
+  definitions,
+  settings,
+  definitionSeed,
+  showAnswers = false,
+}: WordStoriesSharedProps) {
+  const { definitionList } = getWordStoriesData({
+    stories,
+    definitions,
+    definitionSeed,
+  })
+
+  if (!settings.includeDefinitionMatch || definitionList.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="worksheet-section-prefix space-y-3">
+        <h3 className="text-xs font-semibold">Part 1B: Definition Match</h3>
+        <p className="text-xs leading-relaxed text-black/70">
+          {wordStoriesDefinitionMatchInstructions()}
+        </p>
+      </div>
+      <div className="worksheet-pdf-unit">
+        <WordStoriesDefinitionMatchList
+          definitions={definitionList}
+          showAnswers={showAnswers}
+        />
+      </div>
+    </section>
+  )
+}
+
+function WordStoriesClozeSection({
+  stories,
+  definitions,
+  settings,
+  definitionSeed,
+  showAnswers = false,
+}: WordStoriesSharedProps) {
+  const { part2Stories, clozeWordBank } = getWordStoriesData({
+    stories,
+    definitions,
+    definitionSeed,
+  })
+
+  if (!settings.includeClozeStories || part2Stories.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="worksheet-section-prefix space-y-3">
+        <h3 className="text-xs font-semibold">Part 2: Cloze Stories</h3>
+        <p className="text-xs leading-relaxed text-black/70">
+          {wordStoriesClozeInstructions()}
+        </p>
+        {!showAnswers && clozeWordBank.length > 0 ? (
+          <WordBank words={clozeWordBank} />
+        ) : null}
+      </div>
+      {part2Stories.map((story, index) => (
+        <article key={`cloze-${story.id}`} className="worksheet-pdf-unit space-y-2">
+          <h4 className="text-xs font-semibold">Cloze Story {index + 1}</h4>
+          <p className="text-xs leading-relaxed">
+            <StoryTextContent
+              text={story.clozeText}
+              mode={showAnswers ? 'answer' : 'blank'}
+            />
+          </p>
+        </article>
+      ))}
+    </section>
+  )
+}
+
+function WordStoriesWorksheetSections({
+  shellIdPrefix = '',
+  stories,
+  definitions,
+  settings,
+  definitionSeed,
+  showAnswers = false,
+}: WordStoriesSharedProps & { shellIdPrefix?: string }) {
+  const sharedProps = {
+    stories,
+    definitions,
+    settings,
+    definitionSeed,
+    showAnswers,
+  }
+  const { hasContent } = getWordStoriesData({
+    stories,
+    definitions,
+    definitionSeed,
+  })
+
+  return (
+    <>
+      <WorksheetSectionShell
+        sectionId={`${shellIdPrefix}word-stories-part-1`}
+      >
+        <WordStoriesPart1Section {...sharedProps} />
+      </WorksheetSectionShell>
+      {settings.includeDefinitionMatch && hasContent ? (
+        <WorksheetSectionShell
+          sectionId={`${shellIdPrefix}word-stories-definitions`}
+        >
+          <WordStoriesDefinitionsSection {...sharedProps} />
+        </WorksheetSectionShell>
+      ) : null}
+      {settings.includeClozeStories && hasContent ? (
+        <WorksheetSectionShell sectionId={`${shellIdPrefix}word-stories-cloze`}>
+          <WordStoriesClozeSection {...sharedProps} />
+        </WorksheetSectionShell>
+      ) : null}
+    </>
+  )
+}
+
 function WordFormsSentenceList({
   sentences,
   startNumber,
@@ -733,6 +1004,10 @@ function WorksheetSections({
   gradeSentences,
   gradeWordFormSentences,
   gradeCrosswordClues,
+  gradeWordStories,
+  wordStoryDefinitions,
+  wordStorySettings,
+  wordStoryDefinitionSeed,
   wordFormBankWords,
   wordForms,
   fillInBlankWordBank,
@@ -744,6 +1019,10 @@ function WorksheetSections({
   gradeSentences: FillInBlankSentence[]
   gradeWordFormSentences: WordFormSentence[]
   gradeCrosswordClues: CrosswordClue[]
+  gradeWordStories: WordStory[]
+  wordStoryDefinitions: WordStoryDefinition[]
+  wordStorySettings: WordStorySettings
+  wordStoryDefinitionSeed: number
   wordFormBankWords: string[]
   wordForms: WordFormEntry[]
   fillInBlankWordBank: boolean
@@ -828,6 +1107,17 @@ function WorksheetSections({
             </WorksheetSectionShell>
           )
         }
+        if (sectionId === 'word-stories') {
+          return (
+            <WordStoriesWorksheetSections
+              key={sectionId}
+              stories={gradeWordStories}
+              definitions={wordStoryDefinitions}
+              settings={wordStorySettings}
+              definitionSeed={wordStoryDefinitionSeed}
+            />
+          )
+        }
         return null
       })}
     </div>
@@ -841,7 +1131,11 @@ function AnswerKeyContent({
   crosswordResult,
   crosswordAnswerSections,
   wordFormAnswerSections,
+  wordStoryAnswerSections,
   wordForms,
+  wordStoryDefinitions,
+  wordStorySettings,
+  wordStoryDefinitionSeed,
 }: {
   sections: PreviewableWorksheetId[]
   orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
@@ -855,7 +1149,14 @@ function AnswerKeyContent({
     label: string | null
     sentences: WordFormSentence[]
   }>
+  wordStoryAnswerSections: Array<{
+    label: string | null
+    stories: WordStory[]
+  }>
   wordForms: WordFormEntry[]
+  wordStoryDefinitions: WordStoryDefinition[]
+  wordStorySettings: WordStorySettings
+  wordStoryDefinitionSeed: number
 }) {
   const dictationWords = orderedWordsByWorksheet['dictation-audio']
   const fillInBlankWords = orderedWordsByWorksheet['fill-in-the-blank']
@@ -878,6 +1179,9 @@ function AnswerKeyContent({
         (clue) => formatCrosswordClueText(clue.definitions).length > 0,
       ),
     )
+  const hasWordStoriesAnswers = wordStoryAnswerSections.some(
+    (section) => section.stories.length > 0,
+  )
 
   return (
     <div className="space-y-6">
@@ -978,6 +1282,30 @@ function AnswerKeyContent({
           </div>
         </WorksheetSectionShell>
       ) : null}
+
+      {sections.includes('word-stories') && hasWordStoriesAnswers ? (
+        <>
+          {wordStoryAnswerSections.map((section, sectionIndex) =>
+            section.stories.length === 0 ? null : (
+              <div key={sectionIndex} className="space-y-4">
+                {section.label ? (
+                  <WorksheetSectionShell sectionId={`answer-word-stories-grade-${sectionIndex}`}>
+                    <p className="text-xs font-medium">{section.label}</p>
+                  </WorksheetSectionShell>
+                ) : null}
+                <WordStoriesWorksheetSections
+                  shellIdPrefix="answer-"
+                  stories={section.stories}
+                  definitions={wordStoryDefinitions}
+                  settings={wordStorySettings}
+                  definitionSeed={wordStoryDefinitionSeed}
+                  showAnswers
+                />
+              </div>
+            ),
+          )}
+        </>
+      ) : null}
     </div>
   )
 }
@@ -999,6 +1327,10 @@ export function PrintableWorksheet({
   wordFormSentences,
   wordFormShuffleSeed,
   wordForms,
+  wordStories,
+  wordStoryDefinitions,
+  wordStorySettings,
+  wordStoryDefinitionSeed,
   isPrintRoot = false,
 }: PrintableWorksheetProps) {
   const displayTitle = defaultWorksheetTitle(title)
@@ -1025,6 +1357,7 @@ export function PrintableWorksheet({
   const wordFormSentencesByGrade = new Map<GradeLevel, WordFormSentence[]>()
   const wordFormBankByGrade = new Map<GradeLevel, string[]>()
   const crosswordCluesByGrade = new Map<GradeLevel, CrosswordClue[]>()
+  const wordStoriesByGrade = new Map<GradeLevel, WordStory[]>()
 
   for (const variant of variants) {
     if (!sentencesByGrade.has(variant.gradeLevel)) {
@@ -1068,6 +1401,18 @@ export function PrintableWorksheet({
         ),
       )
     }
+
+    if (!wordStoriesByGrade.has(variant.gradeLevel)) {
+      wordStoriesByGrade.set(
+        variant.gradeLevel,
+        getSentencesForGrade(
+          wordStories,
+          variant.gradeLevel,
+          differentiationEnabled,
+          defaultGrade,
+        ).sort((left, right) => left.storyIndex - right.storyIndex),
+      )
+    }
   }
 
   const hasAnswerKeyContent =
@@ -1081,7 +1426,8 @@ export function PrintableWorksheet({
         (clue) => formatCrosswordClueText(clue.definitions).length > 0,
       )) ||
     (sections.includes('word-forms') &&
-      (wordFormSentences.length > 0 || wordForms.length > 0))
+      (wordFormSentences.length > 0 || wordForms.length > 0)) ||
+    (sections.includes('word-stories') && wordStories.length > 0)
 
   if (sections.length === 0) {
     return (
@@ -1102,6 +1448,13 @@ export function PrintableWorksheet({
     ([gradeLevel, gradeClues]) => ({
       label: multipleGrades ? formatGradeLabel(gradeLevel) : null,
       clues: gradeClues,
+    }),
+  )
+
+  const wordStoryAnswerSections = [...wordStoriesByGrade.entries()].map(
+    ([gradeLevel, gradeStories]) => ({
+      label: multipleGrades ? formatGradeLabel(gradeLevel) : null,
+      stories: gradeStories,
     }),
   )
 
@@ -1146,6 +1499,14 @@ export function PrintableWorksheet({
               differentiationEnabled,
               defaultGrade,
             )
+          const gradeWordStories =
+            wordStoriesByGrade.get(variant.gradeLevel) ??
+            getSentencesForGrade(
+              wordStories,
+              variant.gradeLevel,
+              differentiationEnabled,
+              defaultGrade,
+            ).sort((left, right) => left.storyIndex - right.storyIndex)
           const subtitle = variantLabel(
             variant,
             differentiationEnabled,
@@ -1165,6 +1526,10 @@ export function PrintableWorksheet({
                   gradeSentences={gradeSentences}
                   gradeWordFormSentences={gradeWordFormSentences}
                   gradeCrosswordClues={gradeCrosswordClues}
+                  gradeWordStories={gradeWordStories}
+                  wordStoryDefinitions={wordStoryDefinitions}
+                  wordStorySettings={wordStorySettings}
+                  wordStoryDefinitionSeed={wordStoryDefinitionSeed}
                   wordFormBankWords={wordFormBankWords}
                   wordForms={wordForms}
                   fillInBlankWordBank={fillInBlankWordBank}
@@ -1189,7 +1554,11 @@ export function PrintableWorksheet({
             crosswordResult={crosswordResult}
             crosswordAnswerSections={crosswordAnswerSections}
             wordFormAnswerSections={wordFormAnswerSections}
+            wordStoryAnswerSections={wordStoryAnswerSections}
             wordForms={wordForms}
+            wordStoryDefinitions={wordStoryDefinitions}
+            wordStorySettings={wordStorySettings}
+            wordStoryDefinitionSeed={wordStoryDefinitionSeed}
           />
           </div>
           <WorksheetGeneratedFooter />

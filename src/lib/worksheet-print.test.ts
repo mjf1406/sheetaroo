@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it } from 'vitest'
 
-import { packSectionsByHeight } from '@/lib/worksheet-print'
+import { buildPrintUnits, packSectionsByHeight } from '@/lib/worksheet-print'
 
 describe('packSectionsByHeight', () => {
   it('packs sections that fit within the body budget', () => {
@@ -15,5 +17,65 @@ describe('packSectionsByHeight', () => {
 
   it('returns empty array when there are no sections', () => {
     expect(packSectionsByHeight([], 250, 10)).toEqual([])
+  })
+})
+
+describe('buildPrintUnits', () => {
+  it('subdivides sections with multiple worksheet-pdf-unit children', () => {
+    const section = document.createElement('div')
+    section.className = 'worksheet-section'
+    section.setAttribute('data-section-id', 'word-stories-cloze')
+
+    const prefix = document.createElement('div')
+    prefix.className = 'worksheet-section-prefix'
+    prefix.textContent = 'Part 2: Cloze Stories'
+    section.appendChild(prefix)
+
+    const article1 = document.createElement('article')
+    article1.className = 'worksheet-pdf-unit'
+    article1.textContent = 'Story 1'
+    const article2 = document.createElement('article')
+    article2.className = 'worksheet-pdf-unit'
+    article2.textContent = 'Story 2'
+    section.appendChild(article1)
+    section.appendChild(article2)
+    document.body.appendChild(section)
+
+    Object.defineProperty(prefix, 'offsetHeight', {
+      configurable: true,
+      value: 40,
+    })
+    Object.defineProperty(article1, 'offsetHeight', {
+      configurable: true,
+      value: 300,
+    })
+    Object.defineProperty(article2, 'offsetHeight', {
+      configurable: true,
+      value: 300,
+    })
+
+    const units = buildPrintUnits([section], 250)
+
+    expect(units).toHaveLength(2)
+    expect(units.every((unit) => unit.kind === 'units')).toBe(true)
+    expect(units[0]?.prefix).toBeTruthy()
+    expect(units[1]?.prefix).toBeUndefined()
+    expect(units[0]?.units).toHaveLength(1)
+    expect(units[1]?.units).toHaveLength(1)
+  })
+
+  it('treats sections without pdf units as full sections', () => {
+    const section = document.createElement('div')
+    section.className = 'worksheet-section'
+    section.textContent = 'Monolithic content'
+    Object.defineProperty(section, 'offsetHeight', {
+      configurable: true,
+      value: 400,
+    })
+
+    const units = buildPrintUnits([section], 250)
+
+    expect(units).toHaveLength(1)
+    expect(units[0]?.kind).toBe('full')
   })
 })

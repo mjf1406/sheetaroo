@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   BookOpen,
+  BookText,
   FileText,
   Grid3x3,
   Headphones,
@@ -12,7 +13,7 @@ import {
 import {
   getWorksheetPath,
   WORKSHEET_DESCRIPTIONS,
-  WORKSHEET_IDS,
+  WORKSHEET_IDS_BY_LABEL,
   WORKSHEET_LABELS,
   type WorksheetId,
 } from '@/lib/vocabulary-types'
@@ -37,6 +38,7 @@ export const WORKSHEET_ICONS: Record<WorksheetId, LucideIcon> = {
   'word-search': Search,
   'fill-in-the-blank': FileText,
   'word-forms': LayoutGrid,
+  'word-stories': BookText,
 }
 
 export const TOOL_SECTIONS: ToolSectionConfig[] = [
@@ -50,7 +52,7 @@ export const TOOL_SECTIONS: ToolSectionConfig[] = [
         to: '/vocabulary',
         icon: BookOpen,
       },
-      ...WORKSHEET_IDS.map((id) => ({
+      ...WORKSHEET_IDS_BY_LABEL.map((id) => ({
         title: WORKSHEET_LABELS[id],
         description: WORKSHEET_DESCRIPTIONS[id],
         to: getWorksheetPath(id),

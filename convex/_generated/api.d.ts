@@ -23,6 +23,7 @@ import type * as users from "../users.js";
 import type * as voiceClips from "../voiceClips.js";
 import type * as voicePreviewSamples from "../voicePreviewSamples.js";
 import type * as wordForms from "../wordForms.js";
+import type * as wordStories from "../wordStories.js";
 
 import type {
   ApiFromModules,
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   voiceClips: typeof voiceClips;
   voicePreviewSamples: typeof voicePreviewSamples;
   wordForms: typeof wordForms;
+  wordStories: typeof wordStories;
 }>;
 
 /**

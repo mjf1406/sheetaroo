@@ -34,6 +34,11 @@ import type { CrosswordClue } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
+import type {
+  WordStory,
+  WordStoryDefinition,
+  WordStorySettings,
+} from '@/lib/word-stories-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import {
   PAGE_SIZE_OPTIONS,
@@ -67,6 +72,10 @@ type WorksheetPreviewPanelProps = {
   wordForms: WordFormEntry[]
   crosswordClues: CrosswordClue[]
   crosswordSeed: number
+  wordStories: WordStory[]
+  wordStoryDefinitions: WordStoryDefinition[]
+  wordStorySettings: WordStorySettings
+  wordStoryDefinitionSeed: number
   embedded?: boolean
   className?: string
 }
@@ -92,6 +101,10 @@ export function WorksheetPreviewPanel({
   wordForms,
   crosswordClues,
   crosswordSeed,
+  wordStories,
+  wordStoryDefinitions,
+  wordStorySettings,
+  wordStoryDefinitionSeed,
   embedded = false,
   className,
 }: WorksheetPreviewPanelProps) {
@@ -212,13 +225,12 @@ export function WorksheetPreviewPanel({
           </Button>
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            size="icon"
             disabled={!canPreview}
+            aria-label="Download PDF"
             onClick={() => void handleDownloadPdf()}
           >
             <Download className="size-4" />
-            Download PDF
           </Button>
         </>
       )}
@@ -240,7 +252,7 @@ export function WorksheetPreviewPanel({
         </p>
       ) : (
         <WorksheetPreviewScaler
-          measureKey={`${pageSize}:${JSON.stringify(shuffleSeeds)}:${wordCount}:${sentences.length}:${fillInBlankWordBank}:${worksheetOrder.join(',')}:${JSON.stringify(checked)}:${differentiationEnabled}:${JSON.stringify(tiers)}:${JSON.stringify(wordSearchSettings)}:${wordFormSentences.length}:${JSON.stringify(wordFormSentences)}:${wordForms.length}:${JSON.stringify(wordForms)}:${crosswordClues.length}:${JSON.stringify(crosswordClues)}:${crosswordSeed}`}
+          measureKey={`${pageSize}:${JSON.stringify(shuffleSeeds)}:${wordCount}:${sentences.length}:${fillInBlankWordBank}:${worksheetOrder.join(',')}:${JSON.stringify(checked)}:${differentiationEnabled}:${JSON.stringify(tiers)}:${JSON.stringify(wordSearchSettings)}:${wordFormSentences.length}:${JSON.stringify(wordFormSentences)}:${wordForms.length}:${JSON.stringify(wordForms)}:${crosswordClues.length}:${JSON.stringify(crosswordClues)}:${crosswordSeed}:${wordStories.length}:${JSON.stringify(wordStories)}:${wordStoryDefinitions.length}:${JSON.stringify(wordStorySettings)}:${wordStoryDefinitionSeed}`}
         >
           <PrintableWorksheet
             title={title}
@@ -259,6 +271,10 @@ export function WorksheetPreviewPanel({
             wordForms={wordForms}
             crosswordClues={crosswordClues}
             crosswordSeed={crosswordSeed}
+            wordStories={wordStories}
+            wordStoryDefinitions={wordStoryDefinitions}
+            wordStorySettings={wordStorySettings}
+            wordStoryDefinitionSeed={wordStoryDefinitionSeed}
           />
         </WorksheetPreviewScaler>
       )}
