@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import {
   buildEffectiveCrosswordClues,
@@ -22,7 +22,7 @@ describe('buildEffectiveCrosswordClues', () => {
     )
 
     expect(clues).toHaveLength(1)
-    expect(formatCrosswordClueText(clues[0]!.definitions)).toBe(
+    expect(formatCrosswordClueText(clues[0].definitions)).toBe(
       'to examine likenesses',
     )
   })

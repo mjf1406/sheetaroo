@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { buildPrintUnits, packSectionsByHeight } from '@/lib/worksheet-print'
 
@@ -57,11 +57,14 @@ describe('buildPrintUnits', () => {
     const units = buildPrintUnits([section], 250)
 
     expect(units).toHaveLength(2)
-    expect(units.every((unit) => unit.kind === 'units')).toBe(true)
-    expect(units[0]?.prefix).toBeTruthy()
-    expect(units[1]?.prefix).toBeUndefined()
-    expect(units[0]?.units).toHaveLength(1)
-    expect(units[1]?.units).toHaveLength(1)
+    const [first, second] = units
+    if (first.kind !== 'units' || second.kind !== 'units') {
+      throw new Error('expected both print units to be of kind "units"')
+    }
+    expect(first.prefix).toBeTruthy()
+    expect(second.prefix).toBeUndefined()
+    expect(first.units).toHaveLength(1)
+    expect(second.units).toHaveLength(1)
   })
 
   it('treats sections without pdf units as full sections', () => {

@@ -8,11 +8,11 @@ type SeedTarget = {
   accent: string
   voiceId: string
   name: string
-  speeds: number[]
+  speeds: Array<number>
 }
 
 type SeedTargets = {
-  targets: SeedTarget[]
+  targets: Array<SeedTarget>
 }
 
 type SeedOneResult = {
@@ -30,7 +30,7 @@ function convexRun<T>(functionName: string, args?: Record<string, unknown>): T {
     commandArgs.push(JSON.stringify(args))
   }
 
-  const output = execFileSync('npx', commandArgs, {
+  const output = execFileSync('bunx', commandArgs, {
     cwd: root,
     encoding: 'utf-8',
     stdio: ['pipe', 'pipe', 'inherit'],
@@ -40,7 +40,9 @@ function convexRun<T>(functionName: string, args?: Record<string, unknown>): T {
 
 console.log('Seeding voice preview samples via Convex…\n')
 
-const { targets } = convexRun<SeedTargets>('voicePreviewSamples:fetchSeedTargets')
+const { targets } = convexRun<SeedTargets>(
+  'voicePreviewSamples:fetchSeedTargets',
+)
 
 let created = 0
 let updated = 0
@@ -52,7 +54,7 @@ const jobTotal = targets.reduce((sum, target) => sum + target.speeds.length, 0)
 for (const target of targets) {
   const accentLabel = formatAccentLabel(target.accent)
   for (let speedIndex = 0; speedIndex < target.speeds.length; speedIndex++) {
-    const speed = target.speeds[speedIndex]!
+    const speed = target.speeds[speedIndex]
     jobIndex++
     const label = `${accentLabel} · ${target.name} · speed ${speedIndex + 1}/${target.speeds.length} (${speed}x) [${jobIndex}/${jobTotal}]…`
     process.stdout.write(`${label} `)

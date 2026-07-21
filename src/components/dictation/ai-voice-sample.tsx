@@ -1,6 +1,9 @@
 import { useQuery } from 'convex/react'
 
-import { formatVoiceSampleDescription, quantizeSpeed } from '@/lib/voice-sample-ladder'
+import {
+  formatVoiceSampleDescription,
+  quantizeSpeed,
+} from '@/lib/voice-sample-ladder'
 
 import { api } from '../../../convex/_generated/api'
 
@@ -19,15 +22,14 @@ export function AiVoiceSample({ voiceId, speed }: AiVoiceSampleProps) {
   if (!voiceId) return null
 
   if (preview === undefined) {
-    return (
-      <p className="text-sm text-muted-foreground">Loading sample…</p>
-    )
+    return <p className="text-sm text-muted-foreground">Loading sample…</p>
   }
 
   if (!preview?.audioUrl) {
     return (
       <p className="text-sm text-muted-foreground">
-        Preview not seeded yet. Run <code className="text-xs">npm run seed:voice-samples</code>.
+        Preview not seeded yet. Run{' '}
+        <code className="text-xs">bun run seed:voice-samples</code>.
       </p>
     )
   }

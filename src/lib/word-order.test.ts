@@ -1,9 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import {
   buildOrderedWordsByWorksheet,
-  createDefaultShuffleSeeds,
-  createShuffleSeed,
   orderSentencesByWords,
   seededShuffle,
 } from '@/lib/word-order'
@@ -66,12 +64,11 @@ describe('buildOrderedWordsByWorksheet', () => {
       'word-search': 3,
       'crossword-puzzle': 4,
       'word-forms': 5,
+      'word-stories': 7,
     } as const
 
     const ordered = buildOrderedWordsByWorksheet(words, seeds)
 
-    expect(ordered['dictation-audio']).not.toEqual(
-      ordered['fill-in-the-blank'],
-    )
+    expect(ordered['dictation-audio']).not.toEqual(ordered['fill-in-the-blank'])
   })
 })

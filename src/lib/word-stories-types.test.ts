@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import {
   buildClozeAssignments,
@@ -92,8 +92,18 @@ describe('buildClozeAssignments', () => {
 
     expect(part1).toHaveLength(2)
     expect(part2).toHaveLength(2)
-    expect(part1.flatMap((item) => item.words).sort()).toEqual(['a', 'b', 'c', 'd'])
-    expect(part2.flatMap((item) => item.words).sort()).toEqual(['a', 'b', 'c', 'd'])
+    expect(part1.flatMap((item) => item.words).sort()).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
+    expect(part2.flatMap((item) => item.words).sort()).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
     expect(part1).not.toEqual(part2)
   })
 })
