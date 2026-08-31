@@ -10,7 +10,7 @@ import { WordStoriesWorksheet } from '@/components/vocabulary/word-stories-works
 import type { CrosswordClue } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
-import { parseVocabularyText, type WorksheetId } from '@/lib/vocabulary-types'
+import type { parseVocabularyText, WorksheetId } from '@/lib/vocabulary-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
 import type {
@@ -21,14 +21,19 @@ import type {
 
 export type BuilderSectionProps = {
   entries: ReturnType<typeof parseVocabularyText>
-  tiers: DifferentiationTier[]
-  sentences: FillInBlankSentence[]
-  onSentencesChange: (sentences: FillInBlankSentence[]) => void
+  tiers: Array<DifferentiationTier>
+  sentences: Array<FillInBlankSentence>
+  onSentencesChange: (sentences: Array<FillInBlankSentence>) => void
   fillInBlankWordBank: boolean
   onFillInBlankWordBankChange: (wordBank: boolean) => void
-  dictationWords: string[]
+  dictationWords: Array<string>
   dictationSeed: number
   dictationAudioStale: boolean
+  keepDictationOrder: boolean
+  listOrderWords: Array<string>
+  onKeepDictationOrderChange: (keep: boolean) => void
+  onUseDictationListOrder: () => void
+  onShuffleDictationOrder: () => void
   onDictationAudioGenerated: (meta: {
     seed: number
     voiceSource: 'ai' | 'own'
@@ -36,19 +41,21 @@ export type BuilderSectionProps = {
   onRestoreDictationOrder: () => void
   wordSearchSettings: WordSearchSettings
   onWordSearchSettingsChange: (settings: WordSearchSettings) => void
-  wordSearchWords: string[]
-  wordForms: WordFormEntry[]
-  onWordFormsChange: (wordForms: WordFormEntry[]) => void
-  wordFormSentences: WordFormSentence[]
-  onWordFormSentencesChange: (sentences: WordFormSentence[]) => void
-  crosswordClues: CrosswordClue[]
-  onCrosswordCluesChange: (clues: CrosswordClue[]) => void
-  crosswordWords: string[]
+  wordSearchWords: Array<string>
+  wordForms: Array<WordFormEntry>
+  onWordFormsChange: (wordForms: Array<WordFormEntry>) => void
+  wordFormSentences: Array<WordFormSentence>
+  onWordFormSentencesChange: (sentences: Array<WordFormSentence>) => void
+  crosswordClues: Array<CrosswordClue>
+  onCrosswordCluesChange: (clues: Array<CrosswordClue>) => void
+  crosswordWords: Array<string>
   crosswordSeed: number
-  wordStories: WordStory[]
-  onWordStoriesChange: (stories: WordStory[]) => void
-  wordStoryDefinitions: WordStoryDefinition[]
-  onWordStoryDefinitionsChange: (definitions: WordStoryDefinition[]) => void
+  wordStories: Array<WordStory>
+  onWordStoriesChange: (stories: Array<WordStory>) => void
+  wordStoryDefinitions: Array<WordStoryDefinition>
+  onWordStoryDefinitionsChange: (
+    definitions: Array<WordStoryDefinition>,
+  ) => void
   wordStorySettings: WordStorySettings
   onWordStorySettingsChange: (settings: WordStorySettings) => void
   wordStoryAssignmentSeed: number
@@ -62,13 +69,23 @@ export const BUILDER_COMPONENTS: Record<
     dictationWords,
     dictationSeed,
     dictationAudioStale,
+    keepDictationOrder,
+    listOrderWords,
+    onKeepDictationOrderChange,
+    onUseDictationListOrder,
+    onShuffleDictationOrder,
     onDictationAudioGenerated,
     onRestoreDictationOrder,
   }) => (
     <DictationAudioWorksheet
       words={dictationWords}
+      listOrderWords={listOrderWords}
       dictationSeed={dictationSeed}
       audioStale={dictationAudioStale}
+      keepOrder={keepDictationOrder}
+      onKeepOrderChange={onKeepDictationOrderChange}
+      onUseListOrder={onUseDictationListOrder}
+      onShuffleOrder={onShuffleDictationOrder}
       onAudioGenerated={onDictationAudioGenerated}
       onRestoreOrder={onRestoreDictationOrder}
     />

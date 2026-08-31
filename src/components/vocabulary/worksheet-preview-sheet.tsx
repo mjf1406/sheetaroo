@@ -27,27 +27,28 @@ import type { ShuffleSeeds } from '@/lib/word-order'
 
 type WorksheetPreviewSheetProps = {
   title: string
-  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, Array<string>>
   checked: Record<WorksheetId, boolean>
-  worksheetOrder: WorksheetId[]
-  tiers: DifferentiationTier[]
+  worksheetOrder: Array<WorksheetId>
+  tiers: Array<DifferentiationTier>
   differentiationEnabled: boolean
-  sentences: FillInBlankSentence[]
+  sentences: Array<FillInBlankSentence>
   pageSize: PageSize
   onPageSizeChange: (pageSize: PageSize) => void
   fillInBlankWordBank: boolean
   onShuffleApply: () => void
   needsShuffleAudioWarning: boolean
+  canShuffle: boolean
   dictationAudioVoiceSource: 'ai' | 'own' | null
   shuffleSeeds: ShuffleSeeds
   wordCount: number
   wordSearchSettings: WordSearchSettings
-  wordFormSentences: WordFormSentence[]
-  wordForms: WordFormEntry[]
-  crosswordClues: CrosswordClue[]
+  wordFormSentences: Array<WordFormSentence>
+  wordForms: Array<WordFormEntry>
+  crosswordClues: Array<CrosswordClue>
   crosswordSeed: number
-  wordStories: WordStory[]
-  wordStoryDefinitions: WordStoryDefinition[]
+  wordStories: Array<WordStory>
+  wordStoryDefinitions: Array<WordStoryDefinition>
   wordStorySettings: WordStorySettings
   wordStoryDefinitionSeed: number
 }

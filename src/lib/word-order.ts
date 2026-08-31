@@ -18,7 +18,10 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
+export function seededShuffle<T>(
+  items: ReadonlyArray<T>,
+  seed: number,
+): Array<T> {
   if (items.length <= 1) {
     return [...items]
   }
@@ -28,16 +31,16 @@ export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
 
   for (let index = result.length - 1; index > 0; index--) {
     const swapIndex = Math.floor(random() * (index + 1))
-    ;[result[index], result[swapIndex]] = [result[swapIndex]!, result[index]!]
+    ;[result[index], result[swapIndex]] = [result[swapIndex], result[index]]
   }
 
   return result
 }
 
 export function orderSentencesByWords<T extends { word: string }>(
-  sentences: readonly T[],
-  words: readonly string[],
-): T[] {
+  sentences: ReadonlyArray<T>,
+  words: ReadonlyArray<string>,
+): Array<T> {
   const wordIndex = new Map(
     words.map((word, index) => [normalizeWord(word), index]),
   )
@@ -62,13 +65,42 @@ export function createDefaultShuffleSeeds(): ShuffleSeeds {
 }
 
 export function buildOrderedWordsByWorksheet(
-  words: readonly string[],
+  words: ReadonlyArray<string>,
   seeds: ShuffleSeeds,
-  worksheetIds: readonly PreviewableWorksheetId[] = PREVIEWABLE_WORKSHEETS,
-): Record<PreviewableWorksheetId, string[]> {
-  const result = {} as Record<PreviewableWorksheetId, string[]>
+  worksheetIds: ReadonlyArray<PreviewableWorksheetId> = PREVIEWABLE_WORKSHEETS,
+): Record<PreviewableWorksheetId, Array<string>> {
+  const result = {} as Record<PreviewableWorksheetId, Array<string>>
   for (const id of worksheetIds) {
     result[id] = seededShuffle(words, seeds[id])
   }
+  return result
+}
+
+export function wordListsEqual(
+  left: ReadonlyArray<string>,
+  right: ReadonlyArray<string>,
+): boolean {
+  if (left.length !== right.length) return false
+  return left.every(
+    (word, index) => normalizeWord(word) === normalizeWord(right[index] ?? ''),
+  )
+}
+
+export function reconcileKeptWordOrder(
+  keptOrder: ReadonlyArray<string>,
+  currentWords: ReadonlyArray<string>,
+): Array<string> {
+  const remaining = [...currentWords]
+  const result: Array<string> = []
+
+  for (const kept of keptOrder) {
+    const index = remaining.findIndex(
+      (word) => normalizeWord(word) === normalizeWord(kept),
+    )
+    if (index === -1) continue
+    result.push(...remaining.splice(index, 1))
+  }
+
+  result.push(...remaining)
   return result
 }

@@ -40,12 +40,11 @@ import type {
   WordStorySettings,
 } from '@/lib/word-stories-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
+import type { PageSize, PreviewableWorksheetId } from '@/lib/worksheet-preview'
 import {
   PAGE_SIZE_OPTIONS,
   defaultWorksheetTitle,
   getOrderedPreviewableWorksheets,
-  type PageSize,
-  type PreviewableWorksheetId,
 } from '@/lib/worksheet-preview'
 import { downloadWorksheetPdf } from '@/lib/worksheet-print'
 import type { WorksheetId } from '@/lib/vocabulary-types'
@@ -53,27 +52,28 @@ import type { ShuffleSeeds } from '@/lib/word-order'
 
 type WorksheetPreviewPanelProps = {
   title: string
-  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, Array<string>>
   checked: Record<WorksheetId, boolean>
-  worksheetOrder: WorksheetId[]
-  tiers: DifferentiationTier[]
+  worksheetOrder: Array<WorksheetId>
+  tiers: Array<DifferentiationTier>
   differentiationEnabled: boolean
-  sentences: FillInBlankSentence[]
+  sentences: Array<FillInBlankSentence>
   pageSize: PageSize
   onPageSizeChange: (pageSize: PageSize) => void
   fillInBlankWordBank: boolean
   onShuffleApply: () => void
   needsShuffleAudioWarning: boolean
+  canShuffle: boolean
   dictationAudioVoiceSource: 'ai' | 'own' | null
   shuffleSeeds: ShuffleSeeds
   wordCount: number
   wordSearchSettings: WordSearchSettings
-  wordFormSentences: WordFormSentence[]
-  wordForms: WordFormEntry[]
-  crosswordClues: CrosswordClue[]
+  wordFormSentences: Array<WordFormSentence>
+  wordForms: Array<WordFormEntry>
+  crosswordClues: Array<CrosswordClue>
   crosswordSeed: number
-  wordStories: WordStory[]
-  wordStoryDefinitions: WordStoryDefinition[]
+  wordStories: Array<WordStory>
+  wordStoryDefinitions: Array<WordStoryDefinition>
   wordStorySettings: WordStorySettings
   wordStoryDefinitionSeed: number
   embedded?: boolean
@@ -93,6 +93,7 @@ export function WorksheetPreviewPanel({
   fillInBlankWordBank,
   onShuffleApply,
   needsShuffleAudioWarning,
+  canShuffle,
   dictationAudioVoiceSource,
   shuffleSeeds,
   wordCount,
@@ -217,7 +218,12 @@ export function WorksheetPreviewPanel({
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canPreview}
+            disabled={!canPreview || !canShuffle}
+            title={
+              canPreview && !canShuffle
+                ? 'Dictation order is locked. Turn off Keep this order, or shuffle these words on the Dictation worksheet.'
+                : undefined
+            }
             onClick={handleShuffleClick}
           >
             <Shuffle className="size-4" />
@@ -295,6 +301,10 @@ export function WorksheetPreviewPanel({
               {dictationAudioVoiceSource === 'ai' ? (
                 <p>Regenerating uses additional ElevenLabs API credits.</p>
               ) : null}
+              <p>
+                To keep the current dictation order, turn on Keep this order on
+                the Dictation worksheet, then shuffle the other sections.
+              </p>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>

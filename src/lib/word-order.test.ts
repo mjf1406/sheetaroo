@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vite-plus/test'
 import {
   buildOrderedWordsByWorksheet,
   orderSentencesByWords,
+  reconcileKeptWordOrder,
   seededShuffle,
+  wordListsEqual,
 } from '@/lib/word-order'
 
 describe('seededShuffle', () => {
@@ -70,5 +72,45 @@ describe('buildOrderedWordsByWorksheet', () => {
     const ordered = buildOrderedWordsByWorksheet(words, seeds)
 
     expect(ordered['dictation-audio']).not.toEqual(ordered['fill-in-the-blank'])
+  })
+})
+
+describe('wordListsEqual', () => {
+  it('matches lists case-insensitively', () => {
+    expect(wordListsEqual(['Cat', 'Dog'], ['cat', 'dog'])).toBe(true)
+  })
+
+  it('rejects different order', () => {
+    expect(wordListsEqual(['cat', 'dog'], ['dog', 'cat'])).toBe(false)
+  })
+})
+
+describe('reconcileKeptWordOrder', () => {
+  it('keeps the previous relative order and appends new words', () => {
+    expect(
+      reconcileKeptWordOrder(['dog', 'cat'], ['cat', 'bird', 'dog']),
+    ).toEqual(['dog', 'cat', 'bird'])
+  })
+
+  it('drops words that were removed from the list', () => {
+    expect(
+      reconcileKeptWordOrder(['dog', 'cat', 'bird'], ['bird', 'dog']),
+    ).toEqual(['dog', 'bird'])
+  })
+
+  it('uses the current spelling of kept words', () => {
+    expect(reconcileKeptWordOrder(['cat'], ['Cat'])).toEqual(['Cat'])
+  })
+
+  it('preserves duplicate words as a multiset', () => {
+    expect(reconcileKeptWordOrder(['a', 'b', 'a'], ['a', 'a', 'b'])).toEqual([
+      'a',
+      'b',
+      'a',
+    ])
+  })
+
+  it('returns the current list when nothing was kept', () => {
+    expect(reconcileKeptWordOrder([], ['one', 'two'])).toEqual(['one', 'two'])
   })
 })

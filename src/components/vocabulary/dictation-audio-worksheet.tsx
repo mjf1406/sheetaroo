@@ -1,5 +1,5 @@
 import { useAction, useMutation, useQuery } from 'convex/react'
-import { Loader2, Play, Save } from 'lucide-react'
+import { ListOrdered, Loader2, Play, Save, Shuffle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { ClipRecorder } from '@/components/dictation/clip-recorder'
@@ -34,10 +34,15 @@ import {
   stitchAudioSegments,
   uploadBlob,
 } from '@/lib/audio-stitcher'
-import { announcementLabel, buildDictationTimeline } from '@/lib/build-dictation-timeline'
-import { DEFAULT_SETTINGS, type AiWordRepeatMode, type DictationSettings } from '@/lib/dictation-types'
+import {
+  announcementLabel,
+  buildDictationTimeline,
+} from '@/lib/build-dictation-timeline'
+import type { AiWordRepeatMode, DictationSettings } from '@/lib/dictation-types'
+import { DEFAULT_SETTINGS } from '@/lib/dictation-types'
 import { toOrdinalWord } from '@/lib/ordinals'
 import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import { wordListsEqual } from '@/lib/word-order'
 
 import { api } from '../../../convex/_generated/api'
 
@@ -53,10 +58,10 @@ function formatAccentLabel(accent: string): string {
 type LibraryClip = { type: string; label: string }
 
 function validateMyVoice(input: {
-  words: string[]
+  words: Array<string>
   announceNumbers: boolean
-  wordClips: Record<string, Blob>
-  libraryClips: LibraryClip[] | undefined
+  wordClips: Partial<Record<string, Blob>>
+  libraryClips: Array<LibraryClip> | undefined
 }): { ready: boolean; message: string | null } {
   if (input.words.length > 20) {
     return {
@@ -70,16 +75,22 @@ function validateMyVoice(input: {
 
   if (input.announceNumbers) {
     const hasNumber = input.libraryClips?.some((clip) => clip.type === 'number')
-    const requiredOrdinals = input.words.map((_, index) => toOrdinalWord(index + 1))
+    const requiredOrdinals = input.words.map((_, index) =>
+      toOrdinalWord(index + 1),
+    )
     const missingOrdinals = requiredOrdinals.filter(
       (ordinal) =>
-        !input.libraryClips?.some((clip) => clip.type === 'ordinal' && clip.label === ordinal),
+        !input.libraryClips?.some(
+          (clip) => clip.type === 'ordinal' && clip.label === ordinal,
+        ),
     )
 
-    const parts: string[] = []
+    const parts: Array<string> = []
     if (!hasNumber) parts.push('"Number" clip')
-    if (missingOrdinals.length > 0) parts.push(`ordinals ${missingOrdinals.join(', ')}`)
-    if (missingWords.length > 0) parts.push(`word clips for: ${missingWords.join(', ')}`)
+    if (missingOrdinals.length > 0)
+      parts.push(`ordinals ${missingOrdinals.join(', ')}`)
+    if (missingWords.length > 0)
+      parts.push(`word clips for: ${missingWords.join(', ')}`)
 
     if (parts.length > 0) {
       return { ready: false, message: `Record the ${parts.join(', and ')}.` }
@@ -95,17 +106,27 @@ function validateMyVoice(input: {
 }
 
 type DictationAudioWorksheetProps = {
-  words: string[]
+  words: Array<string>
+  listOrderWords: Array<string>
   dictationSeed: number
   audioStale: boolean
+  keepOrder: boolean
+  onKeepOrderChange: (keep: boolean) => void
+  onUseListOrder: () => void
+  onShuffleOrder: () => void
   onAudioGenerated: (meta: { seed: number; voiceSource: 'ai' | 'own' }) => void
   onRestoreOrder: () => void
 }
 
 export function DictationAudioWorksheet({
   words,
+  listOrderWords,
   dictationSeed,
   audioStale,
+  keepOrder,
+  onKeepOrderChange,
+  onUseListOrder,
+  onShuffleOrder,
   onAudioGenerated,
   onRestoreOrder,
 }: DictationAudioWorksheetProps) {
@@ -115,21 +136,27 @@ export function DictationAudioWorksheet({
   const [silenceBetweenWordsMs, setSilenceBetweenWordsMs] = useState(
     DEFAULT_SETTINGS.silenceBetweenWordsMs,
   )
-  const [announceNumbers, setAnnounceNumbers] = useState(DEFAULT_SETTINGS.announceNumbers)
+  const [announceNumbers, setAnnounceNumbers] = useState(
+    DEFAULT_SETTINGS.announceNumbers,
+  )
   const [silenceBetweenNumbersMs, setSilenceBetweenNumbersMs] = useState(
     DEFAULT_SETTINGS.silenceBetweenNumbersMs,
   )
   const [silenceBetweenWordGroupsMs, setSilenceBetweenWordGroupsMs] = useState(
     DEFAULT_SETTINGS.silenceBetweenWordGroupsMs ?? 5000,
   )
-  const [voiceSource, setVoiceSource] = useState<'ai' | 'own'>(DEFAULT_SETTINGS.voiceSource)
+  const [voiceSource, setVoiceSource] = useState<'ai' | 'own'>(
+    DEFAULT_SETTINGS.voiceSource,
+  )
   const [aiWordRepeatMode, setAiWordRepeatMode] = useState<AiWordRepeatMode>(
     DEFAULT_SETTINGS.aiWordRepeatMode ?? 'synthesize_once',
   )
-  const [speechSpeed, setSpeechSpeed] = useState(DEFAULT_SETTINGS.speechSpeed ?? 1.0)
+  const [speechSpeed, setSpeechSpeed] = useState(
+    DEFAULT_SETTINGS.speechSpeed ?? 1.0,
+  )
   const [accent, setAccent] = useState<string>('')
   const [voiceId, setVoiceId] = useState<string>('')
-  const [wordClips, setWordClips] = useState<Record<string, Blob>>({})
+  const [wordClips, setWordClips] = useState<Partial<Record<string, Blob>>>({})
   const [generatedBlob, setGeneratedBlob] = useState<Blob | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -143,7 +170,9 @@ export function DictationAudioWorksheet({
   const requiredOrdinals = useMemo(
     () =>
       announceNumbers && words.length > 0
-        ? Array.from({ length: words.length }, (_, index) => toOrdinalWord(index + 1))
+        ? Array.from({ length: words.length }, (_, index) =>
+            toOrdinalWord(index + 1),
+          )
         : [],
     [announceNumbers, words.length],
   )
@@ -155,14 +184,17 @@ export function DictationAudioWorksheet({
   const synthesizeSpeech = useAction(api.elevenlabs.synthesizeSpeech)
   const saveClip = useMutation(api.voiceClips.save)
   const generateClipUploadUrl = useMutation(api.voiceClips.generateUploadUrl)
-  const generateDictationUploadUrl = useMutation(api.dictations.generateUploadUrl)
+  const generateDictationUploadUrl = useMutation(
+    api.dictations.generateUploadUrl,
+  )
   const createDictation = useMutation(api.dictations.create)
 
-  const [voiceGroups, setVoiceGroups] = useState<VoiceGroup[]>([])
+  const [voiceGroups, setVoiceGroups] = useState<Array<VoiceGroup>>([])
   const [voicesLoading, setVoicesLoading] = useState(false)
 
   const selectedAccentVoices = useMemo(() => {
-    const voices = voiceGroups.find((group) => group.accent === accent)?.voices ?? []
+    const voices =
+      voiceGroups.find((group) => group.accent === accent)?.voices ?? []
     const seen = new Set<string>()
     return voices.filter((voice) => {
       if (seen.has(voice.voiceId)) return false
@@ -190,8 +222,8 @@ export function DictationAudioWorksheet({
       const groups = await listVoices({})
       setVoiceGroups(groups)
       if (groups.length > 0) {
-        setAccent(groups[0]!.accent)
-        setVoiceId(groups[0]!.voices[0]?.voiceId ?? '')
+        setAccent(groups[0].accent)
+        setVoiceId(groups[0].voices[0]?.voiceId ?? '')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load voices')
@@ -210,8 +242,13 @@ export function DictationAudioWorksheet({
     await saveClip({ type, label, storageId: storageId as never })
   }
 
-  async function getLibraryBlob(type: 'number' | 'ordinal', label: string): Promise<Blob | null> {
-    const clip = libraryClips?.find((item) => item.type === type && item.label === label)
+  async function getLibraryBlob(
+    type: 'number' | 'ordinal',
+    label: string,
+  ): Promise<Blob | null> {
+    const clip = libraryClips?.find(
+      (item) => item.type === type && item.label === label,
+    )
     if (!clip?.audioUrl) return null
     const response = await fetch(clip.audioUrl)
     return response.blob()
@@ -249,9 +286,13 @@ export function DictationAudioWorksheet({
     setPreviewUrl(null)
 
     try {
-      const aiSynthOnce = voiceSource === 'ai' && aiWordRepeatMode === 'synthesize_once'
-      const wordSynthSteps = aiSynthOnce ? words.length : words.length * repeatsPerWord
-      const totalSteps = words.length * (announceNumbers ? 1 : 0) + wordSynthSteps
+      const aiSynthOnce =
+        voiceSource === 'ai' && aiWordRepeatMode === 'synthesize_once'
+      const wordSynthSteps = aiSynthOnce
+        ? words.length
+        : words.length * repeatsPerWord
+      const totalSteps =
+        words.length * (announceNumbers ? 1 : 0) + wordSynthSteps
       let completed = 0
       const aiWordCache = new Map<number, Blob>()
 
@@ -277,9 +318,14 @@ export function DictationAudioWorksheet({
           }
 
           const numberBlob = await getLibraryBlob('number', 'number')
-          const ordinalBlob = await getLibraryBlob('ordinal', toOrdinalWord(index))
+          const ordinalBlob = await getLibraryBlob(
+            'ordinal',
+            toOrdinalWord(index),
+          )
           if (!numberBlob || !ordinalBlob) {
-            throw new Error('Record the "Number" clip and all required ordinal clips first.')
+            throw new Error(
+              'Record the "Number" clip and all required ordinal clips first.',
+            )
           }
           completed++
           setProgress(Math.round((completed / Math.max(totalSteps, 1)) * 100))
@@ -295,14 +341,24 @@ export function DictationAudioWorksheet({
             if (aiSynthOnce) {
               const cached = aiWordCache.get(wordIndex)
               if (cached) return cached
-              const base64 = await synthesizeSpeech({ voiceId, text: word, speed: speechSpeed })
+              const base64 = await synthesizeSpeech({
+                voiceId,
+                text: word,
+                speed: speechSpeed,
+              })
               completed++
-              setProgress(Math.round((completed / Math.max(totalSteps, 1)) * 100))
+              setProgress(
+                Math.round((completed / Math.max(totalSteps, 1)) * 100),
+              )
               const blob = base64ToBlob(base64, 'audio/mpeg')
               aiWordCache.set(wordIndex, blob)
               return blob
             }
-            const base64 = await synthesizeSpeech({ voiceId, text: word, speed: speechSpeed })
+            const base64 = await synthesizeSpeech({
+              voiceId,
+              text: word,
+              speed: speechSpeed,
+            })
             completed++
             setProgress(Math.round((completed / Math.max(totalSteps, 1)) * 100))
             return base64ToBlob(base64, 'audio/mpeg')
@@ -334,7 +390,7 @@ export function DictationAudioWorksheet({
   }
 
   async function handleSave() {
-    if (!generatedBlob || !saveName.trim()) return
+    if (!generatedBlob || !saveName.trim() || repeatsPerWord === '') return
     setIsSaving(true)
     setError(null)
     try {
@@ -368,11 +424,78 @@ export function DictationAudioWorksheet({
   }
 
   const ordinalClipsSaved = requiredOrdinals.filter((ordinal) =>
-    libraryClips?.some((clip) => clip.type === 'ordinal' && clip.label === ordinal),
+    libraryClips?.some(
+      (clip) => clip.type === 'ordinal' && clip.label === ordinal,
+    ),
   ).length
 
   return (
     <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Word order</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {words.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Add vocabulary words above to set the dictation order.
+            </p>
+          ) : (
+            <ol className="columns-1 gap-x-8 text-sm sm:columns-2">
+              {words.map((word, index) => (
+                <li
+                  key={`${word}-${index}`}
+                  className="break-inside-avoid py-0.5"
+                >
+                  <span className="text-muted-foreground">{index + 1}.</span>{' '}
+                  {word}
+                </li>
+              ))}
+            </ol>
+          )}
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="keep-dictation-order">Keep this order</Label>
+              <p className="text-xs text-muted-foreground">
+                Stops Shuffle from changing dictation. New words are added at
+                the end.
+              </p>
+            </div>
+            <Switch
+              id="keep-dictation-order"
+              checked={keepOrder}
+              onCheckedChange={onKeepOrderChange}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onUseListOrder}
+              disabled={
+                words.length === 0 || wordListsEqual(words, listOrderWords)
+              }
+            >
+              <ListOrdered className="size-4" />
+              Use word list order
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onShuffleOrder}
+              disabled={words.length < 2}
+            >
+              <Shuffle className="size-4" />
+              Shuffle these words
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -391,19 +514,24 @@ export function DictationAudioWorksheet({
             </div>
 
             <div className="space-y-2">
-              <Label>Silence between word repetitions: {silenceBetweenWordsMs / 1000}s</Label>
+              <Label>
+                Silence between word repetitions: {silenceBetweenWordsMs / 1000}
+                s
+              </Label>
               <Slider
                 min={500}
                 max={10000}
                 step={500}
                 value={[silenceBetweenWordsMs]}
-                onValueChange={([value]) => setSilenceBetweenWordsMs(value ?? 3000)}
+                onValueChange={([value]) => setSilenceBetweenWordsMs(value)}
               />
             </div>
 
             <div className="flex items-center justify-between gap-4">
               <div>
-                <Label htmlFor="announce-numbers">Announce numbers before each word</Label>
+                <Label htmlFor="announce-numbers">
+                  Announce numbers before each word
+                </Label>
                 <p className="text-xs text-muted-foreground">
                   e.g. &quot;Number one&quot;, then the word
                 </p>
@@ -418,26 +546,37 @@ export function DictationAudioWorksheet({
             {announceNumbers ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Silence after number announcement: {silenceBetweenNumbersMs / 1000}s</Label>
+                  <Label>
+                    Silence after number announcement:{' '}
+                    {silenceBetweenNumbersMs / 1000}s
+                  </Label>
                   <Slider
                     min={500}
                     max={5000}
                     step={250}
                     value={[silenceBetweenNumbersMs]}
-                    onValueChange={([value]) => setSilenceBetweenNumbersMs(value ?? 1500)}
+                    onValueChange={([value]) =>
+                      setSilenceBetweenNumbersMs(value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Silence between number groups: {silenceBetweenWordGroupsMs / 1000}s</Label>
+                  <Label>
+                    Silence between number groups:{' '}
+                    {silenceBetweenWordGroupsMs / 1000}s
+                  </Label>
                   <p className="text-xs text-muted-foreground">
-                    Pause after all repetitions of a word, before the next number announcement
+                    Pause after all repetitions of a word, before the next
+                    number announcement
                   </p>
                   <Slider
                     min={500}
                     max={10000}
                     step={500}
                     value={[silenceBetweenWordGroupsMs]}
-                    onValueChange={([value]) => setSilenceBetweenWordGroupsMs(value ?? 5000)}
+                    onValueChange={([value]) =>
+                      setSilenceBetweenWordGroupsMs(value)
+                    }
                   />
                 </div>
               </div>
@@ -501,7 +640,10 @@ export function DictationAudioWorksheet({
                         </SelectTrigger>
                         <SelectContent position="popper" className="max-h-60">
                           {selectedAccentVoices.map((voice) => (
-                            <SelectItem key={voice.voiceId} value={voice.voiceId}>
+                            <SelectItem
+                              key={voice.voiceId}
+                              value={voice.voiceId}
+                            >
                               {voice.name}
                             </SelectItem>
                           ))}
@@ -519,18 +661,22 @@ export function DictationAudioWorksheet({
                       max={1.2}
                       step={0.1}
                       value={[speechSpeed]}
-                      onValueChange={([value]) => setSpeechSpeed(value ?? 1.0)}
+                      onValueChange={([value]) => setSpeechSpeed(value)}
                     />
                   </div>
                 ) : null}
 
-                {voiceId ? <AiVoiceSample voiceId={voiceId} speed={speechSpeed} /> : null}
+                {voiceId ? (
+                  <AiVoiceSample voiceId={voiceId} speed={speechSpeed} />
+                ) : null}
 
                 <div className="space-y-2">
                   <Label>Word repetitions (AI)</Label>
                   <Select
                     value={aiWordRepeatMode}
-                    onValueChange={(value) => setAiWordRepeatMode(value as AiWordRepeatMode)}
+                    onValueChange={(value) =>
+                      setAiWordRepeatMode(value as AiWordRepeatMode)
+                    }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -567,9 +713,9 @@ export function DictationAudioWorksheet({
 
               <TabsContent value="own" className="mt-4 space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Record clips for this dictation. With number announcements on, record
-                  &quot;Number&quot; once and ordinals only up to your word count
-                  (&quot;one&quot;, &quot;two&quot;, …).
+                  Record clips for this dictation. With number announcements on,
+                  record &quot;Number&quot; once and ordinals only up to your
+                  word count (&quot;one&quot;, &quot;two&quot;, …).
                 </p>
 
                 {announceNumbers ? (
@@ -578,15 +724,19 @@ export function DictationAudioWorksheet({
                       label="Number clip"
                       description='Record the word "Number" once'
                       existingUrl={
-                        libraryClips?.find((clip) => clip.type === 'number')?.audioUrl ?? null
+                        libraryClips?.find((clip) => clip.type === 'number')
+                          ?.audioUrl ?? null
                       }
-                      onRecorded={(blob) => void saveLibraryClip('number', 'number', blob)}
+                      onRecorded={(blob) =>
+                        void saveLibraryClip('number', 'number', blob)
+                      }
                     />
 
                     {requiredOrdinals.length > 0 ? (
                       <div className="space-y-2">
                         <Label>
-                          Ordinal clips ({ordinalClipsSaved}/{requiredOrdinals.length} saved)
+                          Ordinal clips ({ordinalClipsSaved}/
+                          {requiredOrdinals.length} saved)
                         </Label>
                         <div className="grid gap-3 sm:grid-cols-2">
                           {requiredOrdinals.map((ordinal) => (
@@ -595,10 +745,14 @@ export function DictationAudioWorksheet({
                               label={ordinal}
                               existingUrl={
                                 libraryClips?.find(
-                                  (clip) => clip.type === 'ordinal' && clip.label === ordinal,
+                                  (clip) =>
+                                    clip.type === 'ordinal' &&
+                                    clip.label === ordinal,
                                 )?.audioUrl ?? null
                               }
-                              onRecorded={(blob) => void saveLibraryClip('ordinal', ordinal, blob)}
+                              onRecorded={(blob) =>
+                                void saveLibraryClip('ordinal', ordinal, blob)
+                              }
                             />
                           ))}
                         </div>
@@ -616,7 +770,10 @@ export function DictationAudioWorksheet({
                           key={word}
                           label={word}
                           onRecorded={(blob) =>
-                            setWordClips((current) => ({ ...current, [word]: blob }))
+                            setWordClips((current) => ({
+                              ...current,
+                              [word]: blob,
+                            }))
                           }
                         />
                       ))}
@@ -647,7 +804,10 @@ export function DictationAudioWorksheet({
                 )}
               </Button>
 
-              {voiceSource === 'own' && words.length > 0 && !myVoiceReady && !isGenerating ? (
+              {voiceSource === 'own' &&
+              words.length > 0 &&
+              !myVoiceReady &&
+              !isGenerating ? (
                 <p className="text-sm text-muted-foreground">
                   Record all required clips above before generating.
                 </p>
@@ -657,18 +817,22 @@ export function DictationAudioWorksheet({
                 <div className="space-y-2">
                   <Progress value={progress} />
                   {progressLabel ? (
-                    <p className="text-sm text-muted-foreground">{progressLabel}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {progressLabel}
+                    </p>
                   ) : null}
                 </div>
               ) : null}
 
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
 
               {audioStale ? (
                 <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
                   <p>
-                    Audio no longer matches the current word order. Regenerate audio
-                    or restore the previous order.
+                    Audio no longer matches the current word order. Regenerate
+                    audio or restore the previous order.
                   </p>
                   <Button
                     type="button"
@@ -706,7 +870,9 @@ export function DictationAudioWorksheet({
         </div>
       </CustomizeSectionCollapsible>
 
-      {savedDictations ? <SavedDictations dictations={savedDictations} /> : null}
+      {savedDictations ? (
+        <SavedDictations dictations={savedDictations} />
+      ) : null}
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent>
@@ -730,7 +896,11 @@ export function DictationAudioWorksheet({
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setSaveOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSaveOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSaving || !saveName.trim()}>
