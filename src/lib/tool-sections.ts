@@ -15,8 +15,8 @@ import {
   WORKSHEET_DESCRIPTIONS,
   WORKSHEET_IDS_BY_LABEL,
   WORKSHEET_LABELS,
-  type WorksheetId,
 } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 
 export type ToolCardConfig = {
   title: string

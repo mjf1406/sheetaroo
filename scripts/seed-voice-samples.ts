@@ -8,11 +8,11 @@ type SeedTarget = {
   accent: string
   voiceId: string
   name: string
-  speeds: Array<number>
+  speeds: number[]
 }
 
 type SeedTargets = {
-  targets: Array<SeedTarget>
+  targets: SeedTarget[]
 }
 
 type SeedOneResult = {

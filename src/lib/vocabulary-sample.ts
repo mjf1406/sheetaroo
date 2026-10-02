@@ -32,7 +32,7 @@ export const SAMPLE_VOCABULARY = [
   {
     word: 'Signature',
     definition:
-      'A person\'s name written in their own way; it can also mean a special quality that makes something easily recognized as belonging to a specific person.',
+      "A person's name written in their own way; it can also mean a special quality that makes something easily recognized as belonging to a specific person.",
   },
   {
     word: 'Main Idea',

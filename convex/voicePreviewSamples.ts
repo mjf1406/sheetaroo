@@ -6,10 +6,15 @@ import {
   internalMutation,
   internalQuery,
   query,
-  type ActionCtx,
 } from './_generated/server'
-import { dedupeVoiceIds, fetchEnglishFlashVoiceGroups, type EnglishVoiceGroup } from './lib/englishVoices'
+import type { ActionCtx } from './_generated/server'
+import {
+  dedupeVoiceIds,
+  fetchEnglishFlashVoiceGroups,
+} from './lib/englishVoices'
+import type { EnglishVoiceGroup } from './lib/englishVoices'
 import { synthesizeSpeechBlob } from './lib/elevenlabsTts'
+import { readProviderErrorMessage } from './lib/providerError'
 import {
   buildVoiceSampleText,
   CACHED_PREVIEW_SPEEDS,
@@ -76,17 +81,22 @@ async function seedOneSample(
   try {
     const blob = await synthesizeSpeechBlob(apiKey, voiceId, sampleText, speed)
     const storageId = await ctx.storage.store(blob)
-    const result = await ctx.runMutation(internal.voicePreviewSamples.upsertPreview, {
-      voiceId,
-      speed,
-      ladderVersion: LADDER_VERSION,
-      storageId,
-    })
+    const result = await ctx.runMutation(
+      internal.voicePreviewSamples.upsertPreview,
+      {
+        voiceId,
+        speed,
+        ladderVersion: LADDER_VERSION,
+        storageId,
+      },
+    )
     return { status: result.status }
   } catch (err) {
     return {
       status: 'error',
-      message: err instanceof Error ? err.message : 'Unknown error',
+      message:
+        readProviderErrorMessage(err) ??
+        (err instanceof Error ? err.message : 'Unknown error'),
     }
   }
 }
@@ -102,7 +112,9 @@ export const getPreview = query({
     const speed = quantizeSpeed(args.speed)
     const sample = await ctx.db
       .query('voicePreviewSamples')
-      .withIndex('by_voice_speed', (q) => q.eq('voiceId', args.voiceId).eq('speed', speed))
+      .withIndex('by_voice_speed', (q) =>
+        q.eq('voiceId', args.voiceId).eq('speed', speed),
+      )
       .unique()
 
     if (!sample) return null
@@ -185,17 +197,26 @@ export const seedOne = internalAction({
     speed: v.number(),
   },
   handler: async (ctx, args) => {
-    const exists = await ctx.runQuery(internal.voicePreviewSamples.previewExists, {
-      voiceId: args.voiceId,
-      speed: args.speed,
-    })
+    const exists = await ctx.runQuery(
+      internal.voicePreviewSamples.previewExists,
+      {
+        voiceId: args.voiceId,
+        speed: args.speed,
+      },
+    )
     if (exists) {
       return { status: 'skipped' as const }
     }
 
     const apiKey = getElevenLabsApiKey()
     const sampleText = buildVoiceSampleText()
-    return await seedOneSample(ctx, apiKey, args.voiceId, args.speed, sampleText)
+    return await seedOneSample(
+      ctx,
+      apiKey,
+      args.voiceId,
+      args.speed,
+      sampleText,
+    )
   },
 })
 
@@ -210,20 +231,30 @@ export const seedAll = internalAction({
     let created = 0
     let updated = 0
     let skipped = 0
-    const errors: Array<{ voiceId: string; speed: number; message: string }> = []
+    const errors: Array<{ voiceId: string; speed: number; message: string }> =
+      []
 
     for (const voiceId of voiceIds) {
       for (const speed of CACHED_PREVIEW_SPEEDS) {
-        const exists = await ctx.runQuery(internal.voicePreviewSamples.previewExists, {
-          voiceId,
-          speed,
-        })
+        const exists = await ctx.runQuery(
+          internal.voicePreviewSamples.previewExists,
+          {
+            voiceId,
+            speed,
+          },
+        )
         if (exists) {
           skipped++
           continue
         }
 
-        const result = await seedOneSample(ctx, apiKey, voiceId, speed, sampleText)
+        const result = await seedOneSample(
+          ctx,
+          apiKey,
+          voiceId,
+          speed,
+          sampleText,
+        )
         if (result.status === 'created') created++
         else if (result.status === 'updated') updated++
         else if (result.status === 'error') {

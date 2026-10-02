@@ -50,7 +50,14 @@ function LoginPage() {
 
     void signOut()
     setError('401 - Unauthorized')
-  }, [auth.isLoading, auth.isAuthenticated, auth.email, navigate, redirectTo, signOut])
+  }, [
+    auth.isLoading,
+    auth.isAuthenticated,
+    auth.email,
+    navigate,
+    redirectTo,
+    signOut,
+  ])
 
   async function handleSignIn() {
     setError(null)

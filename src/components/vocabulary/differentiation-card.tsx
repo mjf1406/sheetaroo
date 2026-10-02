@@ -27,8 +27,10 @@ import {
   formatGradeLabel,
   getFirstUnusedGrade,
   getUsedGrades,
-  type DifferentiationTier,
-  type GradeLevel,
+} from '@/lib/differentiation-types'
+import type {
+  DifferentiationTier,
+  GradeLevel,
 } from '@/lib/differentiation-types'
 
 type DifferentiationCardProps = {
@@ -63,14 +65,20 @@ function TierRow({
         <Label htmlFor={`grade-${tier.id}`}>Grade</Label>
         <Select
           value={tier.gradeLevel}
-          onValueChange={(value) => onUpdate(tier.id, { gradeLevel: value as GradeLevel })}
+          onValueChange={(value) =>
+            onUpdate(tier.id, { gradeLevel: value as GradeLevel })
+          }
         >
           <SelectTrigger id={`grade-${tier.id}`} className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent position="popper">
             {GRADE_LEVELS.map((grade) => (
-              <SelectItem key={grade} value={grade} disabled={usedGrades.has(grade)}>
+              <SelectItem
+                key={grade}
+                value={grade}
+                disabled={usedGrades.has(grade)}
+              >
                 {grade}
               </SelectItem>
             ))}
@@ -83,7 +91,9 @@ function TierRow({
           <NumberInput
             id={`copies-${tier.id}`}
             value={tier.copies}
-            onValueChange={(value) => onUpdate(tier.id, { copies: value === '' ? 1 : value })}
+            onValueChange={(value) =>
+              onUpdate(tier.id, { copies: value === '' ? 1 : value })
+            }
             min={1}
             max={30}
           />
@@ -119,7 +129,9 @@ export function DifferentiationCard({
   }, [tiers.length, onChange])
 
   function updateTier(id: string, patch: Partial<DifferentiationTier>) {
-    onChange(tiers.map((tier) => (tier.id === id ? { ...tier, ...patch } : tier)))
+    onChange(
+      tiers.map((tier) => (tier.id === id ? { ...tier, ...patch } : tier)),
+    )
   }
 
   function removeTier(id: string) {
@@ -140,8 +152,9 @@ export function DifferentiationCard({
 
   function handleToggle(checked: boolean) {
     onEnabledChange(checked)
-    if (!checked && tiers.length > 1) {
-      onChange([tiers[0]])
+    const firstTier = tiers[0]
+    if (!checked && tiers.length > 1 && firstTier) {
+      onChange([firstTier])
     }
   }
 
@@ -162,7 +175,8 @@ export function DifferentiationCard({
         <CardDescription>
           {enabled
             ? 'Add grade levels and set how many worksheet copies to include in the preview for each grade.'
-            : 'Select below the one grade level to use for all worksheets. Toggle on to enable differentiation.'}        </CardDescription>
+            : 'Select below the one grade level to use for all worksheets. Toggle on to enable differentiation.'}{' '}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {enabled ? (
@@ -186,13 +200,24 @@ export function DifferentiationCard({
               </div>
             )}
 
-            <Button type="button" variant="outline" size="sm" onClick={addTier} disabled={!nextGrade}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addTier}
+              disabled={!nextGrade}
+            >
               <Plus className="size-4" />
               Add grade level
             </Button>
           </>
         ) : singleTier ? (
-          <TierRow tier={singleTier} tiers={tiers} onUpdate={updateTier} showCopies={false} />
+          <TierRow
+            tier={singleTier}
+            tiers={tiers}
+            onUpdate={updateTier}
+            showCopies={false}
+          />
         ) : null}
       </CardContent>
     </Card>

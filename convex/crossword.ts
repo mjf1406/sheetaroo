@@ -49,10 +49,7 @@ export const generateDefinitions = action({
       return args.mode === 'all' || !hasTeacherDefinition
     })
 
-    let aiByGrade = new Map<
-      string,
-      Map<string, { definitions: string[] }>
-    >()
+    const aiByGrade = new Map<string, Map<string, { definitions: string[] }>>()
 
     if (entriesNeedingAi.length > 0) {
       const prompt = buildCrosswordDefinitionsPrompt({
@@ -69,7 +66,9 @@ export const generateDefinitions = action({
           (group) => group.gradeLevel === expectedGrade,
         )
         if (!gradeGroup) {
-          throw new Error(`Gemini response missing grade level ${expectedGrade}`)
+          throw new Error(
+            `Gemini response missing grade level ${expectedGrade}`,
+          )
         }
         if (gradeGroup.words.length !== entriesNeedingAi.length) {
           throw new Error(

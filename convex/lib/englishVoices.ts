@@ -1,3 +1,9 @@
+import {
+  elevenLabsHttpErrorMessage,
+  readElevenLabsErrorDetail,
+  throwProviderError,
+} from './providerError'
+
 const FLASH_TURBO_MODEL_IDS = new Set([
   'eleven_flash_v2_5',
   'eleven_flash_v2',
@@ -38,7 +44,8 @@ export function groupEnglishFlashVoicesByAccent(
   for (const voice of data.voices) {
     const english =
       voice.verified_languages?.filter(
-        (lang) => lang.language === 'en' && FLASH_TURBO_MODEL_IDS.has(lang.model_id),
+        (lang) =>
+          lang.language === 'en' && FLASH_TURBO_MODEL_IDS.has(lang.model_id),
       ) ?? []
     if (english.length === 0) continue
 
@@ -64,12 +71,19 @@ export function groupEnglishFlashVoicesByAccent(
 export async function fetchEnglishFlashVoiceGroups(
   apiKey: string,
 ): Promise<EnglishVoiceGroup[]> {
-  const response = await fetch('https://api.elevenlabs.io/v2/voices?page_size=100', {
-    headers: { 'xi-api-key': apiKey },
-  })
+  const response = await fetch(
+    'https://api.elevenlabs.io/v2/voices?page_size=100',
+    {
+      headers: { 'xi-api-key': apiKey },
+    },
+  )
 
   if (!response.ok) {
-    throw new Error(`ElevenLabs API error: ${response.status}`)
+    const detail = await readElevenLabsErrorDetail(response)
+    throwProviderError(
+      'elevenlabs',
+      elevenLabsHttpErrorMessage(response.status, detail),
+    )
   }
 
   const data = (await response.json()) as ElevenLabsVoiceResponse

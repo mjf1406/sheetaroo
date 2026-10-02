@@ -29,6 +29,7 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { actionErrorMessage } from '@/lib/action-error-message'
 import {
   base64ToBlob,
   stitchAudioSegments,
@@ -58,10 +59,10 @@ function formatAccentLabel(accent: string): string {
 type LibraryClip = { type: string; label: string }
 
 function validateMyVoice(input: {
-  words: Array<string>
+  words: string[]
   announceNumbers: boolean
   wordClips: Partial<Record<string, Blob>>
-  libraryClips: Array<LibraryClip> | undefined
+  libraryClips: LibraryClip[] | undefined
 }): { ready: boolean; message: string | null } {
   if (input.words.length > 20) {
     return {
@@ -85,7 +86,7 @@ function validateMyVoice(input: {
         ),
     )
 
-    const parts: Array<string> = []
+    const parts: string[] = []
     if (!hasNumber) parts.push('"Number" clip')
     if (missingOrdinals.length > 0)
       parts.push(`ordinals ${missingOrdinals.join(', ')}`)
@@ -106,8 +107,8 @@ function validateMyVoice(input: {
 }
 
 type DictationAudioWorksheetProps = {
-  words: Array<string>
-  listOrderWords: Array<string>
+  words: string[]
+  listOrderWords: string[]
   dictationSeed: number
   audioStale: boolean
   keepOrder: boolean
@@ -189,7 +190,7 @@ export function DictationAudioWorksheet({
   )
   const createDictation = useMutation(api.dictations.create)
 
-  const [voiceGroups, setVoiceGroups] = useState<Array<VoiceGroup>>([])
+  const [voiceGroups, setVoiceGroups] = useState<VoiceGroup[]>([])
   const [voicesLoading, setVoicesLoading] = useState(false)
 
   const selectedAccentVoices = useMemo(() => {
@@ -221,12 +222,13 @@ export function DictationAudioWorksheet({
     try {
       const groups = await listVoices({})
       setVoiceGroups(groups)
-      if (groups.length > 0) {
-        setAccent(groups[0].accent)
-        setVoiceId(groups[0].voices[0]?.voiceId ?? '')
+      const firstGroup = groups[0]
+      if (firstGroup) {
+        setAccent(firstGroup.accent)
+        setVoiceId(firstGroup.voices[0]?.voiceId ?? '')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load voices')
+      setError(actionErrorMessage(err, 'Failed to load voices'))
     } finally {
       setVoicesLoading(false)
     }
@@ -383,7 +385,7 @@ export function DictationAudioWorksheet({
       setProgressLabel('Done')
       onAudioGenerated({ seed: dictationSeed, voiceSource })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+      setError(actionErrorMessage(err, 'Generation failed'))
     } finally {
       setIsGenerating(false)
     }
@@ -417,7 +419,7 @@ export function DictationAudioWorksheet({
       setSaveOpen(false)
       setSaveName('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed')
+      setError(actionErrorMessage(err, 'Save failed'))
     } finally {
       setIsSaving(false)
     }
@@ -523,7 +525,9 @@ export function DictationAudioWorksheet({
                 max={10000}
                 step={500}
                 value={[silenceBetweenWordsMs]}
-                onValueChange={([value]) => setSilenceBetweenWordsMs(value)}
+                onValueChange={([value]) => {
+                  if (value !== undefined) setSilenceBetweenWordsMs(value)
+                }}
               />
             </div>
 
@@ -555,9 +559,9 @@ export function DictationAudioWorksheet({
                     max={5000}
                     step={250}
                     value={[silenceBetweenNumbersMs]}
-                    onValueChange={([value]) =>
-                      setSilenceBetweenNumbersMs(value)
-                    }
+                    onValueChange={([value]) => {
+                      if (value !== undefined) setSilenceBetweenNumbersMs(value)
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -574,9 +578,10 @@ export function DictationAudioWorksheet({
                     max={10000}
                     step={500}
                     value={[silenceBetweenWordGroupsMs]}
-                    onValueChange={([value]) =>
-                      setSilenceBetweenWordGroupsMs(value)
-                    }
+                    onValueChange={([value]) => {
+                      if (value !== undefined)
+                        setSilenceBetweenWordGroupsMs(value)
+                    }}
                   />
                 </div>
               </div>
@@ -661,7 +666,9 @@ export function DictationAudioWorksheet({
                       max={1.2}
                       step={0.1}
                       value={[speechSpeed]}
-                      onValueChange={([value]) => setSpeechSpeed(value)}
+                      onValueChange={([value]) => {
+                        if (value !== undefined) setSpeechSpeed(value)
+                      }}
                     />
                   </div>
                 ) : null}

@@ -30,7 +30,9 @@ export function createTierId(): string {
   return crypto.randomUUID()
 }
 
-export function getFirstUnusedGrade(tiers: DifferentiationTier[]): GradeLevel | null {
+export function getFirstUnusedGrade(
+  tiers: DifferentiationTier[],
+): GradeLevel | null {
   const used = new Set(tiers.map((tier) => tier.gradeLevel))
   return GRADE_LEVELS.find((grade) => !used.has(grade)) ?? null
 }
@@ -48,6 +50,8 @@ export function getUsedGrades(
   excludeId?: string,
 ): Set<GradeLevel> {
   return new Set(
-    tiers.filter((tier) => tier.id !== excludeId).map((tier) => tier.gradeLevel),
+    tiers
+      .filter((tier) => tier.id !== excludeId)
+      .map((tier) => tier.gradeLevel),
   )
 }

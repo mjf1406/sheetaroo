@@ -37,42 +37,42 @@ type VocabularyBuilderContextValue = {
   worksheetTitle: string
   setWorksheetTitle: (title: string) => void
   entries: ReturnType<typeof parseVocabularyText>
-  words: Array<string>
+  words: string[]
   orderedWordsByWorksheet: ReturnType<typeof buildOrderedWordsByWorksheet>
-  tiers: Array<DifferentiationTier>
-  setTiers: (tiers: Array<DifferentiationTier>) => void
+  tiers: DifferentiationTier[]
+  setTiers: (tiers: DifferentiationTier[]) => void
   differentiationEnabled: boolean
   setDifferentiationEnabled: (enabled: boolean) => void
   builderProps: BuilderSectionProps
   getPrintableProps: (
     checked: Record<WorksheetId, boolean>,
-    worksheetOrder: Array<WorksheetId>,
+    worksheetOrder: WorksheetId[],
   ) => {
     title: string
     orderedWordsByWorksheet: ReturnType<typeof buildOrderedWordsByWorksheet>
     checked: Record<WorksheetId, boolean>
-    worksheetOrder: Array<WorksheetId>
-    tiers: Array<DifferentiationTier>
+    worksheetOrder: WorksheetId[]
+    tiers: DifferentiationTier[]
     differentiationEnabled: boolean
-    sentences: Array<FillInBlankSentence>
+    sentences: FillInBlankSentence[]
     pageSize: PageSize
     fillInBlankWordBank: boolean
     wordSearchSettings: WordSearchSettings
     wordSearchSeed: number
-    wordFormSentences: Array<WordFormSentence>
+    wordFormSentences: WordFormSentence[]
     wordFormShuffleSeed: number
-    wordForms: Array<WordFormEntry>
-    crosswordClues: Array<CrosswordClue>
+    wordForms: WordFormEntry[]
+    crosswordClues: CrosswordClue[]
     crosswordSeed: number
-    wordStories: Array<WordStory>
-    wordStoryDefinitions: Array<WordStoryDefinition>
+    wordStories: WordStory[]
+    wordStoryDefinitions: WordStoryDefinition[]
     wordStorySettings: WordStorySettings
     wordStoryAssignmentSeed: number
     wordStoryDefinitionSeed: number
   }
   getPreviewProps: (
     checked: Record<WorksheetId, boolean>,
-    worksheetOrder: Array<WorksheetId>,
+    worksheetOrder: WorksheetId[],
   ) => ReturnType<VocabularyBuilderContextValue['getPrintableProps']> & {
     onPageSizeChange: (size: PageSize) => void
     onShuffleApply: () => void
@@ -95,37 +95,38 @@ export function VocabularyBuilderProvider({
 }) {
   const [wordText, setWordText] = useState('')
   const [worksheetTitle, setWorksheetTitle] = useState('')
-  const [tiers, setTiers] = useState<Array<DifferentiationTier>>(() => [
+  const [tiers, setTiers] = useState<DifferentiationTier[]>(() => [
     createDefaultTier(),
   ])
   const [differentiationEnabled, setDifferentiationEnabled] = useState(false)
   const [fillInBlankSentences, setFillInBlankSentences] = useState<
-    Array<FillInBlankSentence>
+    FillInBlankSentence[]
   >([])
   const [fillInBlankWordBank, setFillInBlankWordBank] = useState(false)
   const [pageSize, setPageSize] = useState<PageSize>('letter')
   const [shuffleSeeds, setShuffleSeeds] = useState(createDefaultShuffleSeeds)
   const [keepDictationOrder, setKeepDictationOrder] = useState(true)
-  const [dictationOrder, setDictationOrder] = useState<Array<string>>([])
+  const [dictationOrder, setDictationOrder] = useState<string[]>([])
   const [dictationAudioSeed, setDictationAudioSeed] = useState<number | null>(
     null,
   )
-  const [dictationAudioWords, setDictationAudioWords] =
-    useState<Array<string> | null>(null)
+  const [dictationAudioWords, setDictationAudioWords] = useState<
+    string[] | null
+  >(null)
   const [dictationAudioVoiceSource, setDictationAudioVoiceSource] = useState<
     'ai' | 'own' | null
   >(null)
   const [wordSearchSettings, setWordSearchSettings] = useState(
     DEFAULT_WORD_SEARCH_SETTINGS,
   )
-  const [wordForms, setWordForms] = useState<Array<WordFormEntry>>([])
+  const [wordForms, setWordForms] = useState<WordFormEntry[]>([])
   const [wordFormSentences, setWordFormSentences] = useState<
-    Array<WordFormSentence>
+    WordFormSentence[]
   >([])
-  const [crosswordClues, setCrosswordClues] = useState<Array<CrosswordClue>>([])
-  const [wordStories, setWordStories] = useState<Array<WordStory>>([])
+  const [crosswordClues, setCrosswordClues] = useState<CrosswordClue[]>([])
+  const [wordStories, setWordStories] = useState<WordStory[]>([])
   const [wordStoryDefinitions, setWordStoryDefinitions] = useState<
-    Array<WordStoryDefinition>
+    WordStoryDefinition[]
   >([])
   const [wordStorySettings, setWordStorySettings] = useState(
     DEFAULT_WORD_STORY_SETTINGS,
@@ -176,7 +177,7 @@ export function VocabularyBuilderProvider({
 
   function applyShuffle(checked: Record<WorksheetId, boolean>) {
     const next: ShuffleSeeds = { ...shuffleSeeds }
-    let nextDictationOrder: Array<string> | null = null
+    let nextDictationOrder: string[] | null = null
 
     for (const id of PREVIEWABLE_WORKSHEETS) {
       if (!checked[id]) continue
@@ -276,7 +277,7 @@ export function VocabularyBuilderProvider({
 
   function getPrintableProps(
     checked: Record<WorksheetId, boolean>,
-    worksheetOrder: Array<WorksheetId>,
+    worksheetOrder: WorksheetId[],
   ) {
     return {
       title: worksheetTitle,
@@ -305,7 +306,7 @@ export function VocabularyBuilderProvider({
 
   function getPreviewProps(
     checked: Record<WorksheetId, boolean>,
-    worksheetOrder: Array<WorksheetId>,
+    worksheetOrder: WorksheetId[],
   ) {
     return {
       ...getPrintableProps(checked, worksheetOrder),

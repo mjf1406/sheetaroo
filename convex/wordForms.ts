@@ -10,8 +10,8 @@ import {
   buildWordFormsSentencesForWordPrompt,
   generateGeminiWordFormsJson,
   generateGeminiWordFormSentencesJson,
-  type GeminiWordFormGroup,
 } from './lib/geminiText'
+import type { GeminiWordFormGroup } from './lib/geminiText'
 
 const vocabEntryValidator = v.object({
   word: v.string(),
@@ -40,7 +40,10 @@ function expectedSentenceCount(
 
 function mapSentencesFromResponse(
   gradeLevels: string[],
-  words: Array<{ baseWord: string; forms: Array<{ label: string; form: string }> }>,
+  words: Array<{
+    baseWord: string
+    forms: Array<{ label: string; form: string }>
+  }>,
   response: Awaited<ReturnType<typeof generateGeminiWordFormSentencesJson>>,
 ) {
   const results: Array<{
@@ -116,13 +119,16 @@ export const generateBatch = action({
       gradeLevels,
       words,
     })
-    const sentencesResponse = await generateGeminiWordFormSentencesJson(
-      sentencesPrompt,
-    )
+    const sentencesResponse =
+      await generateGeminiWordFormSentencesJson(sentencesPrompt)
 
     return {
       words,
-      sentences: mapSentencesFromResponse(gradeLevels, words, sentencesResponse),
+      sentences: mapSentencesFromResponse(
+        gradeLevels,
+        words,
+        sentencesResponse,
+      ),
     }
   },
 })
@@ -166,9 +172,8 @@ export const regenerateOne = action({
       definition: args.definition,
       forms: word.forms,
     })
-    const sentencesResponse = await generateGeminiWordFormSentencesJson(
-      sentencesPrompt,
-    )
+    const sentencesResponse =
+      await generateGeminiWordFormSentencesJson(sentencesPrompt)
 
     return {
       ...word,

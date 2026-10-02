@@ -6,15 +6,21 @@ import { CustomizeSectionCollapsible } from '@/components/vocabulary/customize-s
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { DifferentiationTier, GradeLevel } from '@/lib/differentiation-types'
+import { actionErrorMessage } from '@/lib/action-error-message'
+import type {
+  DifferentiationTier,
+  GradeLevel,
+} from '@/lib/differentiation-types'
 import {
   createAiWordFormEntry,
   createManualWordFormEntry,
   createWordFormSentenceId,
   wordFormSentenceHeading,
-  type WordFormEntry,
-  type WordFormItem,
-  type WordFormSentence,
+} from '@/lib/word-forms-types'
+import type {
+  WordFormEntry,
+  WordFormItem,
+  WordFormSentence,
 } from '@/lib/word-forms-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
 import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
@@ -77,7 +83,8 @@ export function WordFormsWorksheet({
   )
 
   const hasAiGeneratedContent =
-    aiWordForms.length > 0 || wordFormSentences.some((sentence) => sentence.source === 'ai')
+    aiWordForms.length > 0 ||
+    wordFormSentences.some((sentence) => sentence.source === 'ai')
 
   function updateEntry(id: string, patch: Partial<WordFormEntry>) {
     onWordFormsChange(
@@ -210,7 +217,7 @@ export function WordFormsWorksheet({
       onWordFormsChange([...wordForms, ...newEntries])
       onWordFormSentencesChange([...wordFormSentences, ...newSentences])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+      setError(actionErrorMessage(err, 'Generation failed'))
     } finally {
       setIsGeneratingAll(false)
     }
@@ -250,7 +257,7 @@ export function WordFormsWorksheet({
       }))
       onWordFormSentencesChange([...remaining, ...newSentences])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Regeneration failed')
+      setError(actionErrorMessage(err, 'Regeneration failed'))
     } finally {
       setRegeneratingId(null)
     }
@@ -281,7 +288,7 @@ export function WordFormsWorksheet({
         ),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Regeneration failed')
+      setError(actionErrorMessage(err, 'Regeneration failed'))
     } finally {
       setRegeneratingSentenceId(null)
     }
@@ -420,7 +427,12 @@ export function WordFormsWorksheet({
             'Generate all'
           )}
         </Button>
-        <Button type="button" variant="outline" size="sm" onClick={addManualEntry}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addManualEntry}
+        >
           <Plus className="size-4" />
           Add word manually
         </Button>
@@ -454,7 +466,8 @@ export function WordFormsWorksheet({
           <div className="space-y-6">
             <h3 className="text-sm font-medium">Sentences</h3>
             {tiers.map((tier) => {
-              const tierSentences = aiSentencesByGrade.get(tier.gradeLevel) ?? []
+              const tierSentences =
+                aiSentencesByGrade.get(tier.gradeLevel) ?? []
               if (tierSentences.length === 0) return null
 
               return (
@@ -472,7 +485,8 @@ export function WordFormsWorksheet({
                           htmlFor={`wf-sentence-${sentence.id}`}
                           className="text-xs text-muted-foreground"
                         >
-                          {sentence.baseWord} — {sentence.label} ({sentence.form})
+                          {sentence.baseWord} — {sentence.label} (
+                          {sentence.form})
                         </Label>
                         <Input
                           id={`wf-sentence-${sentence.id}`}

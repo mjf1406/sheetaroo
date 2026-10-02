@@ -7,12 +7,7 @@ export function RoutePending() {
       role="status"
       aria-label="Loading"
     >
-      <img
-        src={LOGO_LG}
-        alt=""
-        className="size-20 animate-spin"
-        aria-hidden
-      />
+      <img src={LOGO_LG} alt="" className="size-20 animate-spin" aria-hidden />
     </div>
   )
 }

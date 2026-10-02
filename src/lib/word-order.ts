@@ -18,10 +18,7 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-export function seededShuffle<T>(
-  items: ReadonlyArray<T>,
-  seed: number,
-): Array<T> {
+export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   if (items.length <= 1) {
     return [...items]
   }
@@ -31,16 +28,20 @@ export function seededShuffle<T>(
 
   for (let index = result.length - 1; index > 0; index--) {
     const swapIndex = Math.floor(random() * (index + 1))
-    ;[result[index], result[swapIndex]] = [result[swapIndex], result[index]]
+    const current = result[index]
+    const swap = result[swapIndex]
+    if (current === undefined || swap === undefined) continue
+    result[index] = swap
+    result[swapIndex] = current
   }
 
   return result
 }
 
 export function orderSentencesByWords<T extends { word: string }>(
-  sentences: ReadonlyArray<T>,
-  words: ReadonlyArray<string>,
-): Array<T> {
+  sentences: readonly T[],
+  words: readonly string[],
+): T[] {
   const wordIndex = new Map(
     words.map((word, index) => [normalizeWord(word), index]),
   )
@@ -65,11 +66,11 @@ export function createDefaultShuffleSeeds(): ShuffleSeeds {
 }
 
 export function buildOrderedWordsByWorksheet(
-  words: ReadonlyArray<string>,
+  words: readonly string[],
   seeds: ShuffleSeeds,
-  worksheetIds: ReadonlyArray<PreviewableWorksheetId> = PREVIEWABLE_WORKSHEETS,
-): Record<PreviewableWorksheetId, Array<string>> {
-  const result = {} as Record<PreviewableWorksheetId, Array<string>>
+  worksheetIds: readonly PreviewableWorksheetId[] = PREVIEWABLE_WORKSHEETS,
+): Record<PreviewableWorksheetId, string[]> {
+  const result = {} as Record<PreviewableWorksheetId, string[]>
   for (const id of worksheetIds) {
     result[id] = seededShuffle(words, seeds[id])
   }
@@ -77,8 +78,8 @@ export function buildOrderedWordsByWorksheet(
 }
 
 export function wordListsEqual(
-  left: ReadonlyArray<string>,
-  right: ReadonlyArray<string>,
+  left: readonly string[],
+  right: readonly string[],
 ): boolean {
   if (left.length !== right.length) return false
   return left.every(
@@ -87,11 +88,11 @@ export function wordListsEqual(
 }
 
 export function reconcileKeptWordOrder(
-  keptOrder: ReadonlyArray<string>,
-  currentWords: ReadonlyArray<string>,
-): Array<string> {
+  keptOrder: readonly string[],
+  currentWords: readonly string[],
+): string[] {
   const remaining = [...currentWords]
-  const result: Array<string> = []
+  const result: string[] = []
 
   for (const kept of keptOrder) {
     const index = remaining.findIndex(

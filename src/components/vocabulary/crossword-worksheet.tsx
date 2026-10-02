@@ -8,15 +8,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { actionErrorMessage } from '@/lib/action-error-message'
 import { generateCrossword } from '@/lib/crossword-generator'
 import {
   createCrosswordClueId,
   createManualCrosswordClue,
   crosswordClueHeading,
   formatCrosswordClueText,
-  type CrosswordClue,
 } from '@/lib/crossword-types'
-import type { DifferentiationTier, GradeLevel } from '@/lib/differentiation-types'
+import type { CrosswordClue } from '@/lib/crossword-types'
+import type {
+  DifferentiationTier,
+  GradeLevel,
+} from '@/lib/differentiation-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
 import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 
@@ -83,7 +87,8 @@ export function CrosswordWorksheet({
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [differentiateDefinitions, setDifferentiateDefinitions] = useState(false)
+  const [differentiateDefinitions, setDifferentiateDefinitions] =
+    useState(false)
   const [regeneratingKey, setRegeneratingKey] = useState<string | null>(null)
 
   const generateDefinitions = useAction(api.crossword.generateDefinitions)
@@ -104,7 +109,10 @@ export function CrosswordWorksheet({
     return grouped
   }, [crosswordClues])
 
-  function getDefinitionsForWord(word: string, gradeLevel: GradeLevel): string[] {
+  function getDefinitionsForWord(
+    word: string,
+    gradeLevel: GradeLevel,
+  ): string[] {
     const clue = crosswordClues.find(
       (item) =>
         normalizeWord(item.word) === normalizeWord(word) &&
@@ -235,7 +243,7 @@ export function CrosswordWorksheet({
         onCrosswordCluesChange([...otherGrades, ...generated])
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+      setError(actionErrorMessage(err, 'Generation failed'))
     } finally {
       setIsGenerating(false)
     }
@@ -277,7 +285,7 @@ export function CrosswordWorksheet({
         }),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Regeneration failed')
+      setError(actionErrorMessage(err, 'Regeneration failed'))
     } finally {
       setRegeneratingKey(null)
     }
@@ -295,9 +303,9 @@ export function CrosswordWorksheet({
         <Label
           htmlFor="crossword-differentiate-definitions"
           className="font-normal"
-          >
-            AI generate / differentiate definitions by grade
-          </Label>
+        >
+          AI generate / differentiate definitions by grade
+        </Label>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -329,16 +337,12 @@ export function CrosswordWorksheet({
       >
         <div className="space-y-4">
           {entries.map((entry) => {
-            const [definition1, definition2] = getDefinitionsForWord(
-              entry.word,
-              defaultGrade,
-            )
+            const definitions = getDefinitionsForWord(entry.word, defaultGrade)
+            const definition1 = definitions[0] ?? ''
+            const definition2 = definitions[1] ?? ''
 
             return (
-              <div
-                key={entry.word}
-                className="space-y-3 rounded-lg border p-4"
-              >
+              <div key={entry.word} className="space-y-3 rounded-lg border p-4">
                 <p className="text-sm font-medium">{entry.word}</p>
                 <div className="space-y-2">
                   <Label htmlFor={`crossword-def1-${entry.word}`}>
@@ -434,7 +438,8 @@ export function CrosswordWorksheet({
                           void handleRegenerate(clue.word, clue.gradeLevel)
                         }
                       >
-                        {regeneratingKey === `${clue.word}:${clue.gradeLevel}` ? (
+                        {regeneratingKey ===
+                        `${clue.word}:${clue.gradeLevel}` ? (
                           <Loader2 className="size-4 animate-spin" />
                         ) : (
                           <RefreshCw className="size-4" />

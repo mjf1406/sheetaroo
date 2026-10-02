@@ -7,6 +7,24 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
+  run: {
+    tasks: {
+      'dev:web': {
+        command: 'vp dev --port 3000',
+        cache: false,
+      },
+      'dev:convex': {
+        command: 'bunx convex dev',
+        cache: false,
+      },
+      /** Start the Vite app and Convex dev server together. */
+      ds: {
+        command: 'echo Both stopped.',
+        dependsOn: ['dev:web', 'dev:convex'],
+        cache: false,
+      },
+    },
+  },
   staged: {
     '*': 'vp check --fix',
   },
@@ -94,8 +112,8 @@ const config = defineConfig({
           'typescript/array-type': [
             'error',
             {
-              default: 'generic',
-              readonly: 'generic',
+              default: 'array-simple',
+              readonly: 'array-simple',
             },
           ],
           'typescript/ban-ts-comment': [
@@ -196,8 +214,8 @@ const config = defineConfig({
           'typescript/array-type': [
             'error',
             {
-              default: 'generic',
-              readonly: 'generic',
+              default: 'array-simple',
+              readonly: 'array-simple',
             },
           ],
           'typescript/ban-ts-comment': [
@@ -254,7 +272,12 @@ const config = defineConfig({
     trailingComma: 'all',
     printWidth: 80,
     sortPackageJson: false,
-    ignorePatterns: ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock'],
+    ignorePatterns: [
+      'package-lock.json',
+      'pnpm-lock.yaml',
+      'yarn.lock',
+      'convex/_generated/**',
+    ],
   },
   resolve: { tsconfigPaths: true },
   plugins: lazyPlugins(() => [

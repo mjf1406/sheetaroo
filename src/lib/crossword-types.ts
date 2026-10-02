@@ -50,8 +50,7 @@ export function createManualCrosswordClue(input: {
     id: createCrosswordClueId(),
     word: input.word,
     gradeLevel: input.gradeLevel,
-    definitions:
-      definitions.length > 0 ? definitions : [''],
+    definitions: definitions.length > 0 ? definitions : [''],
     source: 'manual',
   }
 }

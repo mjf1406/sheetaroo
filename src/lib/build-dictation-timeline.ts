@@ -12,7 +12,9 @@ export type TimelineInput = {
   getWordAudio: (word: string, wordIndex: number) => Promise<Blob>
 }
 
-export async function buildDictationTimeline(input: TimelineInput): Promise<AudioSegment[]> {
+export async function buildDictationTimeline(
+  input: TimelineInput,
+): Promise<AudioSegment[]> {
   const segments: AudioSegment[] = []
 
   for (let wordIndex = 0; wordIndex < input.words.length; wordIndex++) {

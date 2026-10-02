@@ -23,11 +23,8 @@ import {
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
 import { cn } from '@/lib/utils'
-import {
-  VOCABULARY_NAV_ITEMS,
-  parseWorksheetId,
-  type WorksheetView,
-} from '@/lib/vocabulary-types'
+import { VOCABULARY_NAV_ITEMS, parseWorksheetId } from '@/lib/vocabulary-types'
+import type { WorksheetView } from '@/lib/vocabulary-types'
 
 import { api } from '../../convex/_generated/api'
 
@@ -97,7 +94,9 @@ function UserMenu() {
           aria-label="Open user menu"
         >
           <Avatar size="sm">
-            {user.image ? <AvatarImage src={user.image} alt={displayName} /> : null}
+            {user.image ? (
+              <AvatarImage src={user.image} alt={displayName} />
+            ) : null}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -105,12 +104,18 @@ function UserMenu() {
       <DropdownMenuContent align="end" sideOffset={8} className="w-64">
         <div className="flex items-center gap-3 p-3">
           <Avatar>
-            {user.image ? <AvatarImage src={user.image} alt={displayName} /> : null}
+            {user.image ? (
+              <AvatarImage src={user.image} alt={displayName} />
+            ) : null}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium leading-none">{displayName}</p>
-            <p className="mt-1 truncate text-xs text-muted-foreground">{email}</p>
+            <p className="truncate text-sm font-medium leading-none">
+              {displayName}
+            </p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {email}
+            </p>
           </div>
         </div>
         <DropdownMenuSeparator />

@@ -58,7 +58,7 @@ export function getDirectionVectors(
 }
 
 function canPlaceWord(
-  grid: (string | null)[][],
+  grid: Array<Array<string | null>>,
   word: string,
   row: number,
   col: number,
@@ -80,7 +80,7 @@ function canPlaceWord(
 }
 
 function placeWord(
-  grid: (string | null)[][],
+  grid: Array<Array<string | null>>,
   word: string,
   row: number,
   col: number,
@@ -137,7 +137,7 @@ export function generateWordSearch(
     (left, right) => right.cleaned.length - left.cleaned.length,
   )
 
-  const grid: (string | null)[][] = Array.from({ length: height }, () =>
+  const grid: Array<Array<string | null>> = Array.from({ length: height }, () =>
     Array.from({ length: width }, () => null),
   )
   const placements: WordSearchPlacement[] = []
@@ -187,5 +187,7 @@ export function getWordsTooLongForGrid(
   height: number,
 ): string[] {
   const maxDimension = Math.max(width, height)
-  return words.filter((word) => sanitizeWordForSearch(word).length > maxDimension)
+  return words.filter(
+    (word) => sanitizeWordForSearch(word).length > maxDimension,
+  )
 }

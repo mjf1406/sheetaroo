@@ -15,7 +15,12 @@ type ToolCardProps = {
   icon: LucideIcon
 }
 
-export function ToolCard({ title, description, to, icon: Icon }: ToolCardProps) {
+export function ToolCard({
+  title,
+  description,
+  to,
+  icon: Icon,
+}: ToolCardProps) {
   return (
     <Link
       to={to}

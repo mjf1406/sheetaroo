@@ -46,10 +46,16 @@ export const generateBatch = action({
       )
     }
 
-    const results: Array<{ word: string; gradeLevel: string; sentence: string }> = []
+    const results: Array<{
+      word: string
+      gradeLevel: string
+      sentence: string
+    }> = []
 
     for (const expectedGrade of gradeLevels) {
-      const gradeGroup = response.grades.find((group) => group.gradeLevel === expectedGrade)
+      const gradeGroup = response.grades.find(
+        (group) => group.gradeLevel === expectedGrade,
+      )
       if (!gradeGroup) {
         throw new Error(`Gemini response missing grade level ${expectedGrade}`)
       }

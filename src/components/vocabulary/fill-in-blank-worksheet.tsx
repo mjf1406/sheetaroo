@@ -8,13 +8,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { type DifferentiationTier, type GradeLevel } from '@/lib/differentiation-types'
+import { actionErrorMessage } from '@/lib/action-error-message'
+import type {
+  DifferentiationTier,
+  GradeLevel,
+} from '@/lib/differentiation-types'
 import {
   createManualSentence,
   createSentenceId,
   gradeHeading,
-  type FillInBlankSentence,
 } from '@/lib/fill-in-blank-types'
+import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
 import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 
@@ -114,7 +118,9 @@ export function FillInBlankWorksheet({
       return
     }
 
-    const tiersToGenerate = tiers.filter((tier) => !aiSentencesByGrade.has(tier.gradeLevel))
+    const tiersToGenerate = tiers.filter(
+      (tier) => !aiSentencesByGrade.has(tier.gradeLevel),
+    )
     if (tiersToGenerate.length === 0) {
       setError(null)
       setInfo(
@@ -137,11 +143,16 @@ export function FillInBlankWorksheet({
         })),
       })
 
-      const generatedGrades = new Set(tiersToGenerate.map((tier) => tier.gradeLevel))
+      const generatedGrades = new Set(
+        tiersToGenerate.map((tier) => tier.gradeLevel),
+      )
 
-      const manual = sentences.filter((sentence) => sentence.source === 'manual')
+      const manual = sentences.filter(
+        (sentence) => sentence.source === 'manual',
+      )
       const existingAi = sentences.filter(
-        (sentence) => sentence.source === 'ai' && !generatedGrades.has(sentence.gradeLevel),
+        (sentence) =>
+          sentence.source === 'ai' && !generatedGrades.has(sentence.gradeLevel),
       )
       const newAi = results.map((result) => ({
         id: createSentenceId(),
@@ -152,7 +163,7 @@ export function FillInBlankWorksheet({
       }))
       onSentencesChange([...manual, ...existingAi, ...newAi])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+      setError(actionErrorMessage(err, 'Generation failed'))
     } finally {
       setIsGeneratingAll(false)
     }
@@ -175,11 +186,13 @@ export function FillInBlankWorksheet({
 
       onSentencesChange(
         sentences.map((item) =>
-          item.id === sentence.id ? { ...item, sentence: result.sentence } : item,
+          item.id === sentence.id
+            ? { ...item, sentence: result.sentence }
+            : item,
         ),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Regeneration failed')
+      setError(actionErrorMessage(err, 'Regeneration failed'))
     } finally {
       setRegeneratingId(null)
     }
@@ -199,7 +212,10 @@ export function FillInBlankWorksheet({
         </Label>
       </div>
 
-      <Tabs value={mode} onValueChange={(value) => setMode(value as WorksheetMode)}>
+      <Tabs
+        value={mode}
+        onValueChange={(value) => setMode(value as WorksheetMode)}
+      >
         <TabsList>
           <TabsTrigger value="manual">Create your own</TabsTrigger>
           <TabsTrigger value="ai">AI generate</TabsTrigger>
@@ -207,7 +223,12 @@ export function FillInBlankWorksheet({
 
         <TabsContent value="manual" className="mt-4 space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={addManualSentence}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addManualSentence}
+            >
               <Plus className="size-4" />
               Add sentence
             </Button>
@@ -231,13 +252,18 @@ export function FillInBlankWorksheet({
               {manualSentences.map((sentence) => (
                 <div key={sentence.id} className="flex items-start gap-2">
                   <div className="min-w-0 flex-1 space-y-1">
-                    <Label htmlFor={`manual-${sentence.id}`} className="text-xs text-muted-foreground">
+                    <Label
+                      htmlFor={`manual-${sentence.id}`}
+                      className="text-xs text-muted-foreground"
+                    >
                       {sentence.word}
                     </Label>
                     <Input
                       id={`manual-${sentence.id}`}
                       value={sentence.sentence}
-                      onChange={(event) => updateSentence(sentence.id, event.target.value)}
+                      onChange={(event) =>
+                        updateSentence(sentence.id, event.target.value)
+                      }
                       placeholder="The _____ was interesting."
                     />
                   </div>
@@ -261,7 +287,9 @@ export function FillInBlankWorksheet({
           <Button
             type="button"
             onClick={() => void handleGenerateAll()}
-            disabled={isGeneratingAll || entries.length === 0 || tiers.length === 0}
+            disabled={
+              isGeneratingAll || entries.length === 0 || tiers.length === 0
+            }
           >
             {isGeneratingAll ? (
               <>
@@ -275,7 +303,8 @@ export function FillInBlankWorksheet({
 
           {aiSentencesByGrade.size === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Generate grade-level sentences from your vocabulary list and differentiation settings.
+              Generate grade-level sentences from your vocabulary list and
+              differentiation settings.
             </p>
           ) : null}
 
@@ -284,7 +313,8 @@ export function FillInBlankWorksheet({
             show={aiSentencesByGrade.size > 0}
           >
             {tiers.map((tier) => {
-              const tierSentences = aiSentencesByGrade.get(tier.gradeLevel) ?? []
+              const tierSentences =
+                aiSentencesByGrade.get(tier.gradeLevel) ?? []
               if (tierSentences.length === 0) return null
 
               return (

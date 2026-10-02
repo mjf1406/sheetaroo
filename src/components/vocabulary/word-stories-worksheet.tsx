@@ -9,7 +9,11 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import type { DifferentiationTier, GradeLevel } from '@/lib/differentiation-types'
+import { actionErrorMessage } from '@/lib/action-error-message'
+import type {
+  DifferentiationTier,
+  GradeLevel,
+} from '@/lib/differentiation-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
 import { getWords, WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 import {
@@ -18,9 +22,11 @@ import {
   createManualWordStory,
   createWordStoryId,
   wordStoriesHeading,
-  type WordStory,
-  type WordStoryDefinition,
-  type WordStorySettings,
+} from '@/lib/word-stories-types'
+import type {
+  WordStory,
+  WordStoryDefinition,
+  WordStorySettings,
 } from '@/lib/word-stories-types'
 
 import { api } from '../../../convex/_generated/api'
@@ -44,7 +50,10 @@ function mergeDefinitions(
   aiDefinitions: Array<{ word: string; definition: string }>,
 ): WordStoryDefinition[] {
   const aiByWord = new Map(
-    aiDefinitions.map((item) => [item.word.trim().toLowerCase(), item.definition]),
+    aiDefinitions.map((item) => [
+      item.word.trim().toLowerCase(),
+      item.definition,
+    ]),
   )
 
   return entries
@@ -112,7 +121,11 @@ export function WordStoriesWorksheet({
   const clozeAssignments = useMemo(
     () =>
       wordStorySettings.includeClozeStories
-        ? buildClozeAssignments(words, wordStorySettings, wordStoryAssignmentSeed)
+        ? buildClozeAssignments(
+            words,
+            wordStorySettings,
+            wordStoryAssignmentSeed,
+          )
         : assignments,
     [words, wordStorySettings, wordStoryAssignmentSeed, assignments],
   )
@@ -145,7 +158,9 @@ export function WordStoriesWorksheet({
 
   function updateStory(id: string, patch: Partial<WordStory>) {
     onWordStoriesChange(
-      wordStories.map((story) => (story.id === id ? { ...story, ...patch } : story)),
+      wordStories.map((story) =>
+        story.id === id ? { ...story, ...patch } : story,
+      ),
     )
   }
 
@@ -154,7 +169,10 @@ export function WordStoriesWorksheet({
   }
 
   function addManualStory() {
-    const assignment = assignments[0] ?? { storyIndex: 0, words: words.slice(0, 1) }
+    const assignment = assignments[0] ?? {
+      storyIndex: 0,
+      words: words.slice(0, 1),
+    }
     const clozeAssignment = clozeAssignments.find(
       (item) => item.storyIndex === assignment.storyIndex,
     )
@@ -180,7 +198,7 @@ export function WordStoriesWorksheet({
       setInfo(null)
       return
     }
-    if (assignments.length === 0 || assignments.every((item) => item.words.length === 0)) {
+    if (assignments.every((item) => item.words.length === 0)) {
       setError('Add vocabulary words to assign to stories.')
       setInfo(null)
       return
@@ -239,7 +257,7 @@ export function WordStoriesWorksheet({
         mergeDefinitions(entries, results.definitions),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+      setError(actionErrorMessage(err, 'Generation failed'))
     } finally {
       setIsGeneratingAll(false)
     }
@@ -278,7 +296,7 @@ export function WordStoriesWorksheet({
         ),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Regeneration failed')
+      setError(actionErrorMessage(err, 'Regeneration failed'))
     } finally {
       setRegeneratingId(null)
     }
@@ -311,7 +329,9 @@ export function WordStoriesWorksheet({
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="word-stories-repeat-across">Repeat words across stories</Label>
+            <Label htmlFor="word-stories-repeat-across">
+              Repeat words across stories
+            </Label>
             <Switch
               id="word-stories-repeat-across"
               checked={wordStorySettings.allowRepeatAcrossStories}
@@ -321,7 +341,9 @@ export function WordStoriesWorksheet({
             />
           </div>
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="word-stories-repeat-within">Repeat words within stories</Label>
+            <Label htmlFor="word-stories-repeat-within">
+              Repeat words within stories
+            </Label>
             <Switch
               id="word-stories-repeat-within"
               checked={wordStorySettings.allowRepeatWithinStory}
@@ -331,7 +353,9 @@ export function WordStoriesWorksheet({
             />
           </div>
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="word-stories-definition-match">Include definition matching</Label>
+            <Label htmlFor="word-stories-definition-match">
+              Include definition matching
+            </Label>
             <Switch
               id="word-stories-definition-match"
               checked={wordStorySettings.includeDefinitionMatch}
@@ -341,7 +365,9 @@ export function WordStoriesWorksheet({
             />
           </div>
           <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="word-stories-cloze">Include Part 2 cloze stories</Label>
+            <Label htmlFor="word-stories-cloze">
+              Include Part 2 cloze stories
+            </Label>
             <Switch
               id="word-stories-cloze"
               checked={wordStorySettings.includeClozeStories}
@@ -383,14 +409,22 @@ export function WordStoriesWorksheet({
         </div>
       ) : null}
 
-      <Tabs value={mode} onValueChange={(value) => setMode(value as WorksheetMode)}>
+      <Tabs
+        value={mode}
+        onValueChange={(value) => setMode(value as WorksheetMode)}
+      >
         <TabsList>
           <TabsTrigger value="manual">Create your own</TabsTrigger>
           <TabsTrigger value="ai">AI generate</TabsTrigger>
         </TabsList>
 
         <TabsContent value="manual" className="mt-4 space-y-4">
-          <Button type="button" variant="outline" size="sm" onClick={addManualStory}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addManualStory}
+          >
             <Plus className="size-4" />
             Add story
           </Button>
@@ -406,7 +440,9 @@ export function WordStoriesWorksheet({
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1 space-y-3">
                       <div className="space-y-1">
-                        <Label htmlFor={`manual-title-${story.id}`}>Title</Label>
+                        <Label htmlFor={`manual-title-${story.id}`}>
+                          Title
+                        </Label>
                         <Input
                           id={`manual-title-${story.id}`}
                           value={story.title}
@@ -423,7 +459,9 @@ export function WordStoriesWorksheet({
                           id={`manual-story-${story.id}`}
                           value={story.storyText}
                           onChange={(event) =>
-                            updateStory(story.id, { storyText: event.target.value })
+                            updateStory(story.id, {
+                              storyText: event.target.value,
+                            })
                           }
                           rows={4}
                         />
@@ -436,7 +474,9 @@ export function WordStoriesWorksheet({
                           id={`manual-cloze-${story.id}`}
                           value={story.clozeText}
                           onChange={(event) =>
-                            updateStory(story.id, { clozeText: event.target.value })
+                            updateStory(story.id, {
+                              clozeText: event.target.value,
+                            })
                           }
                           rows={4}
                         />
@@ -463,7 +503,9 @@ export function WordStoriesWorksheet({
           <Button
             type="button"
             onClick={() => void handleGenerateAll()}
-            disabled={isGeneratingAll || entries.length === 0 || tiers.length === 0}
+            disabled={
+              isGeneratingAll || entries.length === 0 || tiers.length === 0
+            }
           >
             {isGeneratingAll ? (
               <>
@@ -477,8 +519,8 @@ export function WordStoriesWorksheet({
 
           {aiStoriesByGrade.size === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Generate grade-level stories from your vocabulary list and differentiation
-              settings.
+              Generate grade-level stories from your vocabulary list and
+              differentiation settings.
             </p>
           ) : null}
 
@@ -496,16 +538,23 @@ export function WordStoriesWorksheet({
                     {wordStoriesHeading(tier.gradeLevel, tierStories.length)}
                   </h3>
                   {tierStories.map((story) => (
-                    <div key={story.id} className="space-y-3 rounded-md border p-3">
+                    <div
+                      key={story.id}
+                      className="space-y-3 rounded-md border p-3"
+                    >
                       <div className="flex items-start gap-2">
                         <div className="min-w-0 flex-1 space-y-3">
                           <div className="space-y-1">
-                            <Label htmlFor={`ai-title-${story.id}`}>Title</Label>
+                            <Label htmlFor={`ai-title-${story.id}`}>
+                              Title
+                            </Label>
                             <Input
                               id={`ai-title-${story.id}`}
                               value={story.title}
                               onChange={(event) =>
-                                updateStory(story.id, { title: event.target.value })
+                                updateStory(story.id, {
+                                  title: event.target.value,
+                                })
                               }
                             />
                           </div>
@@ -517,7 +566,9 @@ export function WordStoriesWorksheet({
                               id={`ai-story-${story.id}`}
                               value={story.storyText}
                               onChange={(event) =>
-                                updateStory(story.id, { storyText: event.target.value })
+                                updateStory(story.id, {
+                                  storyText: event.target.value,
+                                })
                               }
                               rows={4}
                             />
@@ -530,7 +581,9 @@ export function WordStoriesWorksheet({
                               id={`ai-cloze-${story.id}`}
                               value={story.clozeText}
                               onChange={(event) =>
-                                updateStory(story.id, { clozeText: event.target.value })
+                                updateStory(story.id, {
+                                  clozeText: event.target.value,
+                                })
                               }
                               rows={4}
                             />
@@ -567,7 +620,9 @@ export function WordStoriesWorksheet({
           <ul className="space-y-1 text-sm text-muted-foreground">
             {wordStoryDefinitions.map((item) => (
               <li key={item.word}>
-                <span className="font-medium text-foreground">{item.word}:</span>{' '}
+                <span className="font-medium text-foreground">
+                  {item.word}:
+                </span>{' '}
                 {item.definition}
               </li>
             ))}

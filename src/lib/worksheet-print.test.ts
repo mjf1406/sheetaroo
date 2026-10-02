@@ -57,7 +57,11 @@ describe('buildPrintUnits', () => {
     const units = buildPrintUnits([section], 250)
 
     expect(units).toHaveLength(2)
-    const [first, second] = units
+    const first = units[0]
+    const second = units[1]
+    if (!first || !second) {
+      throw new Error('expected two print units')
+    }
     if (first.kind !== 'units' || second.kind !== 'units') {
       throw new Error('expected both print units to be of kind "units"')
     }

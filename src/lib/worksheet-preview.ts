@@ -1,7 +1,10 @@
-import type { DifferentiationTier, GradeLevel } from '@/lib/differentiation-types'
+import type {
+  DifferentiationTier,
+  GradeLevel,
+} from '@/lib/differentiation-types'
 import { formatGradeLabel } from '@/lib/differentiation-types'
-import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
-import { WORKSHEET_IDS, type WorksheetId } from '@/lib/vocabulary-types'
+import { WORKSHEET_IDS } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 
 export const PREVIEWABLE_WORKSHEETS = [
   'dictation-audio',
@@ -28,8 +31,13 @@ export function getWorksheetVariants(
     return [{ gradeLevel: '5', copyIndex: 1, totalCopies: 1 }]
   }
 
+  const firstTier = tiers[0]
+  if (!firstTier) {
+    return [{ gradeLevel: '5', copyIndex: 1, totalCopies: 1 }]
+  }
+
   if (!differentiationEnabled) {
-    return [{ gradeLevel: tiers[0].gradeLevel, copyIndex: 1, totalCopies: 1 }]
+    return [{ gradeLevel: firstTier.gradeLevel, copyIndex: 1, totalCopies: 1 }]
   }
 
   return tiers.flatMap((tier) =>
@@ -47,7 +55,7 @@ export function getOrderedPreviewableWorksheets(
 ): PreviewableWorksheetId[] {
   return order.filter(
     (id): id is PreviewableWorksheetId =>
-      PREVIEWABLE_WORKSHEETS.includes(id as PreviewableWorksheetId) && checked[id],
+      PREVIEWABLE_WORKSHEETS.includes(id) && checked[id],
   )
 }
 
@@ -64,7 +72,10 @@ export function defaultWorksheetTitle(title: string): string {
 }
 
 export function formatStudentSentence(sentence: string): string {
-  return sentence.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  return sentence
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function fillAnswerInSentence(sentence: string, word: string): string {
@@ -110,11 +121,13 @@ export const PAGE_SIZE_OPTIONS: Array<{ value: PageSize; label: string }> = [
 ]
 
 export function sanitizeFilename(title: string): string {
-  return title
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase() || 'worksheet'
+  return (
+    title
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase() || 'worksheet'
+  )
 }
 
 export function drawOneWordInstructions(dictationIncluded: boolean): string {

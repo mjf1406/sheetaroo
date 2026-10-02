@@ -1,3 +1,5 @@
+import { throwProviderError } from './providerError'
+
 /** Cheapest GA model — used for fill-in-the-blank, word forms, and other high-volume tasks. */
 export const GEMINI_MODEL = 'gemini-3.1-flash-lite'
 
@@ -34,6 +36,14 @@ function getApiKey(): string {
   return apiKey
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function readUnknownArray(value: unknown): unknown[] | null {
+  return Array.isArray(value) ? value : null
+}
+
 function validateSentence(item: unknown): item is GeminiSentence {
   if (
     typeof item !== 'object' ||
@@ -44,7 +54,9 @@ function validateSentence(item: unknown): item is GeminiSentence {
     return false
   }
   if (!(item as GeminiSentence).sentence.includes('_____')) {
-    throw new Error(`Sentence for "${(item as GeminiSentence).word}" must include a _____ blank`)
+    throw new Error(
+      `Sentence for "${(item as GeminiSentence).word}" must include a _____ blank`,
+    )
   }
   return true
 }
@@ -84,19 +96,14 @@ function parseMultiGradeGeminiJson(text: string): GeminiMultiGradeResponse {
     throw new Error('Gemini returned invalid JSON')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('grades' in parsed) ||
-    !Array.isArray((parsed as GeminiMultiGradeResponse).grades)
-  ) {
+  const grades = isRecord(parsed) ? readUnknownArray(parsed.grades) : null
+  if (!grades) {
     throw new Error('Gemini response missing grades array')
   }
 
-  for (const grade of (parsed as GeminiMultiGradeResponse).grades) {
+  for (const grade of grades) {
     if (
-      typeof grade !== 'object' ||
-      grade === null ||
+      !isRecord(grade) ||
       typeof grade.gradeLevel !== 'string' ||
       !Array.isArray(grade.sentences)
     ) {
@@ -112,14 +119,50 @@ function parseMultiGradeGeminiJson(text: string): GeminiMultiGradeResponse {
   return parsed as GeminiMultiGradeResponse
 }
 
+const GEMINI_BUSY_FALLBACK =
+  'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.'
+
+function geminiProviderMessage(body: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(body)
+    if (typeof parsed !== 'object' || parsed === null || !('error' in parsed)) {
+      return null
+    }
+    const error: unknown = (parsed as { error?: unknown }).error
+    if (typeof error !== 'object' || error === null || !('message' in error)) {
+      return null
+    }
+    if (typeof error.message !== 'string') return null
+    const message = error.message.trim()
+    return message.length > 0 ? message : null
+  } catch {
+    return null
+  }
+}
+
 function geminiErrorMessage(status: number, body: string): string {
-  if (status === 429) {
-    return 'Gemini API rate limit reached (this is your Google AI quota, not Convex). Wait a minute and try again, or check usage at aistudio.google.com.'
-  }
+  const providerMessage = geminiProviderMessage(body)
   if (status === 503) {
-    return 'Gemini is temporarily overloaded. Please try again in a moment.'
+    return `Gemini is busy right now, not this site. ${providerMessage ?? GEMINI_BUSY_FALLBACK}`
   }
-  return `Gemini API error (${status}): ${body.slice(0, 200)}`
+  if (status === 429) {
+    const detail =
+      providerMessage ??
+      'Wait a minute and try again, or check usage at aistudio.google.com.'
+    return `Gemini rate limit reached (Google AI quota, not this site). ${detail}`
+  }
+  if (providerMessage) {
+    return `Gemini error (${status}): ${providerMessage}`
+  }
+  return `Gemini API error (${status}).`
+}
+
+function rethrowGeminiFailure(error: Error): never {
+  const status = (error as Error & { status?: number }).status
+  if (status !== undefined) {
+    throwProviderError('gemini', error.message)
+  }
+  throw error
 }
 
 const RETRYABLE_GEMINI_STATUSES = new Set([429, 500, 503])
@@ -129,7 +172,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function fetchGeminiJsonOnce(prompt: string, model: string): Promise<string> {
+async function fetchGeminiJsonOnce(
+  prompt: string,
+  model: string,
+): Promise<string> {
   const apiKey = getApiKey()
   const response = await fetch(`${geminiApiUrl(model)}?key=${apiKey}`, {
     method: 'POST',
@@ -145,7 +191,9 @@ async function fetchGeminiJsonOnce(prompt: string, model: string): Promise<strin
 
   if (!response.ok) {
     const body = await response.text()
-    const error = new Error(geminiErrorMessage(response.status, body)) as Error & {
+    const error = new Error(
+      geminiErrorMessage(response.status, body),
+    ) as Error & {
       status?: number
     }
     error.status = response.status
@@ -164,7 +212,10 @@ async function fetchGeminiJsonOnce(prompt: string, model: string): Promise<strin
   return text
 }
 
-async function fetchGeminiJson(prompt: string, model = GEMINI_MODEL): Promise<string> {
+async function fetchGeminiJson(
+  prompt: string,
+  model = GEMINI_MODEL,
+): Promise<string> {
   let lastError: Error | undefined
 
   for (let attempt = 0; attempt < GEMINI_MAX_ATTEMPTS; attempt++) {
@@ -181,17 +232,22 @@ async function fetchGeminiJson(prompt: string, model = GEMINI_MODEL): Promise<st
         !RETRYABLE_GEMINI_STATUSES.has(status) ||
         isLastAttempt
       ) {
-        throw error
+        rethrowGeminiFailure(error)
       }
 
       await sleep(1000 * 2 ** attempt)
     }
   }
 
-  throw lastError ?? new Error('Gemini request failed')
+  if (lastError) {
+    rethrowGeminiFailure(lastError)
+  }
+  throw new Error('Gemini request failed')
 }
 
-export async function generateGeminiJson(prompt: string): Promise<GeminiResponse> {
+export async function generateGeminiJson(
+  prompt: string,
+): Promise<GeminiResponse> {
   const text = await fetchGeminiJson(prompt)
   return parseGeminiJson(text)
 }
@@ -207,7 +263,9 @@ export function formatGradeForPrompt(gradeLevel: string): string {
   return gradeLevel === 'K' ? 'Kindergarten' : `Grade ${gradeLevel}`
 }
 
-function formatWordList(entries: Array<{ word: string; definition?: string }>): string {
+function formatWordList(
+  entries: Array<{ word: string; definition?: string }>,
+): string {
   return entries
     .map((entry, index) => {
       const definition = entry.definition ? ` (${entry.definition})` : ''
@@ -268,7 +326,9 @@ export function buildRegeneratePrompt(input: {
   currentSentence?: string
 }): string {
   const gradeLabel = formatGradeForPrompt(input.gradeLevel)
-  const definitionLine = input.definition ? `\nDefinition: ${input.definition}` : ''
+  const definitionLine = input.definition
+    ? `\nDefinition: ${input.definition}`
+    : ''
   const avoidLine = input.currentSentence
     ? `\nWrite a different sentence than this one: "${input.currentSentence}"`
     : ''
@@ -321,19 +381,14 @@ function parseWordFormsGeminiJson(text: string): GeminiWordFormsResponse {
     throw new Error('Gemini returned invalid JSON')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('words' in parsed) ||
-    !Array.isArray((parsed as GeminiWordFormsResponse).words)
-  ) {
+  const words = isRecord(parsed) ? readUnknownArray(parsed.words) : null
+  if (!words) {
     throw new Error('Gemini response missing words array')
   }
 
-  for (const group of (parsed as GeminiWordFormsResponse).words) {
+  for (const group of words) {
     if (
-      typeof group !== 'object' ||
-      group === null ||
+      !isRecord(group) ||
       typeof group.baseWord !== 'string' ||
       !Array.isArray(group.forms) ||
       group.forms.length === 0
@@ -395,7 +450,9 @@ export function buildWordFormsRegeneratePrompt(input: {
   word: string
   definition?: string
 }): string {
-  const definitionLine = input.definition ? `\nDefinition: ${input.definition}` : ''
+  const definitionLine = input.definition
+    ? `\nDefinition: ${input.definition}`
+    : ''
 
   return `You are a teacher creating vocabulary word-form activities for English learners.
 
@@ -433,7 +490,9 @@ type GeminiWordFormSentencesResponse = {
   grades: GeminiWordFormSentenceGradeBatch[]
 }
 
-function validateWordFormSentence(item: unknown): item is GeminiWordFormSentence {
+function validateWordFormSentence(
+  item: unknown,
+): item is GeminiWordFormSentence {
   if (
     typeof item !== 'object' ||
     item === null ||
@@ -452,7 +511,9 @@ function validateWordFormSentence(item: unknown): item is GeminiWordFormSentence
   return true
 }
 
-function parseWordFormSentencesGeminiJson(text: string): GeminiWordFormSentencesResponse {
+function parseWordFormSentencesGeminiJson(
+  text: string,
+): GeminiWordFormSentencesResponse {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -460,23 +521,20 @@ function parseWordFormSentencesGeminiJson(text: string): GeminiWordFormSentences
     throw new Error('Gemini returned invalid JSON')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('grades' in parsed) ||
-    !Array.isArray((parsed as GeminiWordFormSentencesResponse).grades)
-  ) {
+  const grades = isRecord(parsed) ? readUnknownArray(parsed.grades) : null
+  if (!grades) {
     throw new Error('Gemini response missing grades array')
   }
 
-  for (const grade of (parsed as GeminiWordFormSentencesResponse).grades) {
+  for (const grade of grades) {
     if (
-      typeof grade !== 'object' ||
-      grade === null ||
+      !isRecord(grade) ||
       typeof grade.gradeLevel !== 'string' ||
       !Array.isArray(grade.sentences)
     ) {
-      throw new Error('Gemini response has invalid word form sentence grade shape')
+      throw new Error(
+        'Gemini response has invalid word form sentence grade shape',
+      )
     }
     for (const item of grade.sentences) {
       if (!validateWordFormSentence(item)) {
@@ -588,7 +646,9 @@ export function buildWordFormsSentenceRegeneratePrompt(input: {
   currentSentence?: string
 }): string {
   const gradeLabel = formatGradeForPrompt(input.gradeLevel)
-  const definitionLine = input.definition ? `\nDefinition: ${input.definition}` : ''
+  const definitionLine = input.definition
+    ? `\nDefinition: ${input.definition}`
+    : ''
   const avoidLine = input.currentSentence
     ? `\nWrite a different sentence than this one: "${input.currentSentence}"`
     : ''
@@ -668,7 +728,9 @@ function validateCrosswordDefinitionItem(
     .filter(Boolean)
 
   if (definitions.length === 0 || definitions.length > 2) {
-    throw new Error(`Crossword definitions for "${word}" must include 1–2 items`)
+    throw new Error(
+      `Crossword definitions for "${word}" must include 1–2 items`,
+    )
   }
 
   const normalizedWord = word.toLowerCase()
@@ -693,31 +755,19 @@ function parseCrosswordDefinitionsGeminiJson(
     throw new Error('Gemini returned invalid JSON')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('grades' in parsed) ||
-    !Array.isArray((parsed as GeminiCrosswordDefinitionsResponse).grades)
-  ) {
+  const grades = isRecord(parsed) ? readUnknownArray(parsed.grades) : null
+  if (!grades) {
     throw new Error('Gemini response missing grades array')
   }
 
-  for (const grade of (parsed as GeminiCrosswordDefinitionsResponse).grades) {
-    if (
-      typeof grade !== 'object' ||
-      grade === null ||
-      typeof grade.gradeLevel !== 'string' ||
-      !Array.isArray(grade.words)
-    ) {
+  for (const grade of grades) {
+    const words = isRecord(grade) ? readUnknownArray(grade.words) : null
+    if (!isRecord(grade) || typeof grade.gradeLevel !== 'string' || !words) {
       throw new Error('Gemini response has invalid crossword grade shape')
     }
-    for (const item of grade.words) {
+    for (const item of words) {
       const word =
-        typeof item === 'object' &&
-        item !== null &&
-        typeof (item as GeminiCrosswordWord).word === 'string'
-          ? (item as GeminiCrosswordWord).word
-          : 'word'
+        isRecord(item) && typeof item.word === 'string' ? item.word : 'word'
       if (!validateCrosswordDefinitionItem(item, word)) {
         throw new Error('Gemini response has invalid crossword word shape')
       }
@@ -831,8 +881,12 @@ function validateWordStoryItem(item: unknown): item is GeminiWordStoryItem {
   }
 
   return (
-    story.words.every((word) => typeof word === 'string' && word.trim().length > 0) &&
-    story.clozeWords.every((word) => typeof word === 'string' && word.trim().length > 0)
+    story.words.every(
+      (word) => typeof word === 'string' && word.trim().length > 0,
+    ) &&
+    story.clozeWords.every(
+      (word) => typeof word === 'string' && word.trim().length > 0,
+    )
   )
 }
 
@@ -857,19 +911,14 @@ function parseWordStoriesGeminiJson(text: string): GeminiWordStoriesResponse {
     throw new Error('Gemini returned invalid JSON')
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('grades' in parsed) ||
-    !Array.isArray((parsed as GeminiWordStoriesResponse).grades)
-  ) {
+  const grades = isRecord(parsed) ? readUnknownArray(parsed.grades) : null
+  if (!grades) {
     throw new Error('Gemini response missing grades array')
   }
 
-  for (const grade of (parsed as GeminiWordStoriesResponse).grades) {
+  for (const grade of grades) {
     if (
-      typeof grade !== 'object' ||
-      grade === null ||
+      !isRecord(grade) ||
       typeof grade.gradeLevel !== 'string' ||
       !Array.isArray(grade.stories) ||
       !Array.isArray(grade.definitions)
@@ -883,7 +932,9 @@ function parseWordStoriesGeminiJson(text: string): GeminiWordStoriesResponse {
     }
     for (const definition of grade.definitions) {
       if (!validateWordStoryDefinition(definition)) {
-        throw new Error('Gemini response has invalid word story definition shape')
+        throw new Error(
+          'Gemini response has invalid word story definition shape',
+        )
       }
     }
   }
@@ -896,17 +947,6 @@ export async function generateGeminiWordStoriesJson(
 ): Promise<GeminiWordStoriesResponse> {
   const text = await fetchGeminiJson(prompt)
   return parseWordStoriesGeminiJson(text)
-}
-
-function formatStoryAssignments(
-  assignments: Array<{ storyIndex: number; words: string[] }>,
-): string {
-  return assignments
-    .map(
-      (assignment) =>
-        `Story ${assignment.storyIndex + 1} (storyIndex: ${assignment.storyIndex}): ${assignment.words.join(', ')}`,
-    )
-    .join('\n')
 }
 
 function formatStoryPairAssignments(
@@ -965,7 +1005,9 @@ export function buildWordStoriesBatchPrompt(input: {
   allowRepeatWithinStory: boolean
   entries: Array<{ word: string; definition?: string }>
 }): string {
-  const wordsNeedingDefinitions = input.entries.filter((entry) => !entry.definition?.trim())
+  const wordsNeedingDefinitions = input.entries.filter(
+    (entry) => !entry.definition?.trim(),
+  )
   const wordList = formatWordList(input.entries)
   const gradeSections = input.gradeLevels
     .map((gradeLevel) => {
@@ -1028,7 +1070,8 @@ export function buildWordStoryRegeneratePrompt(input: {
   const definitionList = formatWordList(
     input.entries.filter(
       (entry) =>
-        input.words.includes(entry.word) || input.clozeWords.includes(entry.word),
+        input.words.includes(entry.word) ||
+        input.clozeWords.includes(entry.word),
     ),
   )
   const repeatRule = input.allowRepeatWithinStory

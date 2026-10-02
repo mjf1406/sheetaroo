@@ -33,7 +33,12 @@ export const synthesizeSpeech = action({
       throw new Error('ELEVENLABS_API_KEY is not configured')
     }
 
-    const blob = await synthesizeSpeechBlob(apiKey, args.voiceId, args.text, args.speed)
+    const blob = await synthesizeSpeechBlob(
+      apiKey,
+      args.voiceId,
+      args.text,
+      args.speed,
+    )
     const buffer = await blob.arrayBuffer()
     const bytes = new Uint8Array(buffer)
     let binary = ''

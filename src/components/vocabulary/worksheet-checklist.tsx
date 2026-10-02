@@ -5,8 +5,8 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
 } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
   arrayMove,
@@ -18,9 +18,16 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 
 import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { WORKSHEET_LABELS, type WorksheetId } from '@/lib/vocabulary-types'
+import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 
 type WorksheetChecklistProps = {
   checked: Record<WorksheetId, boolean>
@@ -35,8 +42,19 @@ type SortableWorksheetRowProps = {
   onCheckedChange: (id: WorksheetId, value: boolean) => void
 }
 
-function SortableWorksheetRow({ id, checked, onCheckedChange }: SortableWorksheetRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+function SortableWorksheetRow({
+  id,
+  checked,
+  onCheckedChange,
+}: SortableWorksheetRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id,
   })
 
@@ -66,7 +84,10 @@ function SortableWorksheetRow({ id, checked, onCheckedChange }: SortableWorkshee
         checked={checked}
         onCheckedChange={(value) => onCheckedChange(id, value === true)}
       />
-      <Label htmlFor={`worksheet-${id}`} className="cursor-pointer flex-1 font-normal">
+      <Label
+        htmlFor={`worksheet-${id}`}
+        className="cursor-pointer flex-1 font-normal"
+      >
         {WORKSHEET_LABELS[id]}
       </Label>
     </div>
@@ -104,7 +125,8 @@ export function WorksheetChecklist({
       <CardHeader>
         <CardTitle>Worksheets</CardTitle>
         <CardDescription>
-          Choose which worksheets to show below. Drag to reorder sections in the preview.
+          Choose which worksheets to show below. Drag to reorder sections in the
+          preview.
         </CardDescription>
       </CardHeader>
       <CardContent>

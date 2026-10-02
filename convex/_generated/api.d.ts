@@ -18,6 +18,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_elevenlabsTts from "../lib/elevenlabsTts.js";
 import type * as lib_englishVoices from "../lib/englishVoices.js";
 import type * as lib_geminiText from "../lib/geminiText.js";
+import type * as lib_providerError from "../lib/providerError.js";
 import type * as lib_voiceSampleLadder from "../lib/voiceSampleLadder.js";
 import type * as users from "../users.js";
 import type * as voiceClips from "../voiceClips.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "lib/elevenlabsTts": typeof lib_elevenlabsTts;
   "lib/englishVoices": typeof lib_englishVoices;
   "lib/geminiText": typeof lib_geminiText;
+  "lib/providerError": typeof lib_providerError;
   "lib/voiceSampleLadder": typeof lib_voiceSampleLadder;
   users: typeof users;
   voiceClips: typeof voiceClips;

@@ -1,7 +1,7 @@
 import { v } from 'convex/values'
 
 import { mutation, query } from './_generated/server'
-import { requireUser, requireUserId } from './lib/auth'
+import { requireUserId } from './lib/auth'
 
 const dictationSettings = v.object({
   words: v.array(v.string()),

@@ -18,7 +18,9 @@ export function ClipRecorder({
   existingUrl,
 }: ClipRecorderProps) {
   const [isRecording, setIsRecording] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(existingUrl ?? null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    existingUrl ?? null,
+  )
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
@@ -30,7 +32,9 @@ export function ClipRecorder({
       if (event.data.size > 0) chunksRef.current.push(event.data)
     }
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+      const blob = new Blob(chunksRef.current, {
+        type: recorder.mimeType || 'audio/webm',
+      })
       const url = URL.createObjectURL(blob)
       setPreviewUrl(url)
       onRecorded(blob)
@@ -65,12 +69,22 @@ export function ClipRecorder({
       </div>
       <div className="flex flex-wrap gap-2">
         {isRecording ? (
-          <Button type="button" size="sm" variant="destructive" onClick={stopRecording}>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={stopRecording}
+          >
             <Square className="size-4" />
             Stop
           </Button>
         ) : (
-          <Button type="button" size="sm" variant="outline" onClick={() => void startRecording()}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => void startRecording()}
+          >
             <Mic className="size-4" />
             Record
           </Button>
@@ -88,7 +102,9 @@ export function ClipRecorder({
           </label>
         </Button>
       </div>
-      {previewUrl ? <audio controls src={previewUrl} className="w-full" /> : null}
+      {previewUrl ? (
+        <audio controls src={previewUrl} className="w-full" />
+      ) : null}
     </div>
   )
 }

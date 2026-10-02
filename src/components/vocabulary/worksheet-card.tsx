@@ -11,8 +11,8 @@ import { WORKSHEET_ICONS } from '@/lib/tool-sections'
 import {
   WORKSHEET_DESCRIPTIONS,
   WORKSHEET_LABELS,
-  type WorksheetId,
 } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 
 type WorksheetCardProps = {
   id: WorksheetId

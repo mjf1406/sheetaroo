@@ -22,7 +22,9 @@ describe('buildEffectiveCrosswordClues', () => {
     )
 
     expect(clues).toHaveLength(1)
-    expect(formatCrosswordClueText(clues[0].definitions)).toBe(
+    const clue = clues[0]
+    if (!clue) throw new Error('expected a crossword clue')
+    expect(formatCrosswordClueText(clue.definitions)).toBe(
       'to examine likenesses',
     )
   })

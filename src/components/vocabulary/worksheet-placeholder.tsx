@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import type { VocabEntry } from '@/lib/vocabulary-types'
 
 type WorksheetPlaceholderProps = {
@@ -6,7 +12,10 @@ type WorksheetPlaceholderProps = {
   entries: VocabEntry[]
 }
 
-export function WorksheetPlaceholder({ title, entries }: WorksheetPlaceholderProps) {
+export function WorksheetPlaceholder({
+  title,
+  entries,
+}: WorksheetPlaceholderProps) {
   const withDefinitions = entries.filter((entry) => entry.definition).length
 
   return (

@@ -61,9 +61,7 @@ export function createManualWordStory(input: {
   words: string[]
   clozeWords?: string[]
 }): WordStory {
-  const placeholderWords = input.words
-    .map((word) => `{{${word}}}`)
-    .join(' ')
+  const placeholderWords = input.words.map((word) => `{{${word}}}`).join(' ')
   const clozeWords = input.clozeWords ?? [...input.words]
   const clozePlaceholderWords = clozeWords
     .map((word) => `{{${word}}}`)
@@ -165,7 +163,10 @@ export function buildPart2ClozeOrder(
 
   const indices = Array.from({ length: storyCount }, (_, index) => index)
   for (let attempt = 0; attempt < 20; attempt++) {
-    const shuffled = seededShuffle(indices, seed + PART2_ORDER_SEED_OFFSET + attempt)
+    const shuffled = seededShuffle(
+      indices,
+      seed + PART2_ORDER_SEED_OFFSET + attempt,
+    )
     if (!shuffled.some((value, index) => value === index)) {
       return shuffled
     }

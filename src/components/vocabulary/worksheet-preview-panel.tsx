@@ -52,12 +52,12 @@ import type { ShuffleSeeds } from '@/lib/word-order'
 
 type WorksheetPreviewPanelProps = {
   title: string
-  orderedWordsByWorksheet: Record<PreviewableWorksheetId, Array<string>>
+  orderedWordsByWorksheet: Record<PreviewableWorksheetId, string[]>
   checked: Record<WorksheetId, boolean>
-  worksheetOrder: Array<WorksheetId>
-  tiers: Array<DifferentiationTier>
+  worksheetOrder: WorksheetId[]
+  tiers: DifferentiationTier[]
   differentiationEnabled: boolean
-  sentences: Array<FillInBlankSentence>
+  sentences: FillInBlankSentence[]
   pageSize: PageSize
   onPageSizeChange: (pageSize: PageSize) => void
   fillInBlankWordBank: boolean
@@ -68,12 +68,12 @@ type WorksheetPreviewPanelProps = {
   shuffleSeeds: ShuffleSeeds
   wordCount: number
   wordSearchSettings: WordSearchSettings
-  wordFormSentences: Array<WordFormSentence>
-  wordForms: Array<WordFormEntry>
-  crosswordClues: Array<CrosswordClue>
+  wordFormSentences: WordFormSentence[]
+  wordForms: WordFormEntry[]
+  crosswordClues: CrosswordClue[]
   crosswordSeed: number
-  wordStories: Array<WordStory>
-  wordStoryDefinitions: Array<WordStoryDefinition>
+  wordStories: WordStory[]
+  wordStoryDefinitions: WordStoryDefinition[]
   wordStorySettings: WordStorySettings
   wordStoryDefinitionSeed: number
   embedded?: boolean

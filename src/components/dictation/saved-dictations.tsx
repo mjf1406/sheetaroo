@@ -68,9 +68,16 @@ export function SavedDictations({ dictations }: SavedDictationsProps) {
                 <div className="flex flex-wrap items-center gap-2">
                   {dictation.audioUrl ? (
                     <>
-                      <audio controls src={dictation.audioUrl} className="h-8 max-w-xs" />
+                      <audio
+                        controls
+                        src={dictation.audioUrl}
+                        className="h-8 max-w-xs"
+                      />
                       <Button size="sm" variant="outline" asChild>
-                        <a href={dictation.audioUrl} download={`${dictation.name}.wav`}>
+                        <a
+                          href={dictation.audioUrl}
+                          download={`${dictation.name}.wav`}
+                        >
                           Download
                         </a>
                       </Button>
@@ -78,7 +85,11 @@ export function SavedDictations({ dictations }: SavedDictationsProps) {
                   ) : null}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" aria-label={`Delete ${dictation.name}`}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        aria-label={`Delete ${dictation.name}`}
+                      >
                         <Trash2 className="size-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -86,15 +97,17 @@ export function SavedDictations({ dictations }: SavedDictationsProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete dictation?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently delete &quot;{dictation.name}&quot;. This action
-                          cannot be undone.
+                          This will permanently delete &quot;{dictation.name}
+                          &quot;. This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           variant="destructive"
-                          onClick={() => void removeDictation({ id: dictation._id })}
+                          onClick={() =>
+                            void removeDictation({ id: dictation._id })
+                          }
                         >
                           Delete
                         </AlertDialogAction>

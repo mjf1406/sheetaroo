@@ -1,7 +1,8 @@
 import { snapdom } from '@zumer/snapdom'
 import { jsPDF } from 'jspdf'
 
-import { type PageSize, sanitizeFilename } from '@/lib/worksheet-preview'
+import { sanitizeFilename } from '@/lib/worksheet-preview'
+import type { PageSize } from '@/lib/worksheet-preview'
 import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 
 const EXPORT_SCALE = 2
@@ -36,9 +37,7 @@ function getPrintRoot(): HTMLElement | null {
 
 function getPageElements(root: HTMLElement): HTMLElement[] {
   return Array.from(
-    root.querySelectorAll<HTMLElement>(
-      '.worksheet-page, .answer-key-section',
-    ),
+    root.querySelectorAll<HTMLElement>('.worksheet-page, .answer-key-section'),
   )
 }
 
@@ -59,7 +58,12 @@ function pageHeightPx(pageSize: PageSize): number {
   return 297 * (96 / 25.4)
 }
 
-function pageMarginsPx(): { top: number; right: number; bottom: number; left: number } {
+function pageMarginsPx(): {
+  top: number
+  right: number
+  bottom: number
+  left: number
+} {
   const dpi = 96
   return {
     top: PDF_PAGE_MARGIN_IN.top * dpi,
@@ -122,7 +126,8 @@ function addCanvasToPdf(
   pageHeight: number,
   addPageFirst: boolean,
 ): number {
-  const contentWidth = pageWidth - PDF_PAGE_MARGIN_IN.left - PDF_PAGE_MARGIN_IN.right
+  const contentWidth =
+    pageWidth - PDF_PAGE_MARGIN_IN.left - PDF_PAGE_MARGIN_IN.right
   const contentHeight =
     pageHeight - PDF_PAGE_MARGIN_IN.top - PDF_PAGE_MARGIN_IN.bottom
   const imageHeight = (contentWidth * canvas.height) / canvas.width
@@ -210,18 +215,16 @@ export function buildPrintUnits(
     }
 
     const prefix = getSectionPrefix(section)
-    const prefixHeight = prefix
-      ? prefix.offsetHeight + PREFIX_LIST_GAP_PX
-      : 0
+    const prefixHeight = prefix ? prefix.offsetHeight + PREFIX_LIST_GAP_PX : 0
 
     let group: HTMLElement[] = []
     let groupHeight = 0
-    let isFirstGroup = true
+    const paging = { isFirstGroup: true }
 
     const flushGroup = () => {
       if (group.length === 0) return
 
-      const includePrefix = isFirstGroup && prefix !== null
+      const includePrefix = paging.isFirstGroup && prefix !== null
       printUnits.push({
         kind: 'units',
         section,
@@ -229,7 +232,7 @@ export function buildPrintUnits(
         height: (includePrefix ? prefixHeight : 0) + groupHeight,
         prefix: includePrefix ? prefix : undefined,
       })
-      isFirstGroup = false
+      paging.isFirstGroup = false
       group = []
       groupHeight = 0
     }
@@ -238,7 +241,7 @@ export function buildPrintUnits(
       const unitHeight = unit.offsetHeight
       const gap = group.length > 0 ? PDF_UNIT_GAP_PX : 0
       const budget =
-        isFirstGroup && prefix ? bodyBudget - prefixHeight : bodyBudget
+        paging.isFirstGroup && prefix ? bodyBudget - prefixHeight : bodyBudget
 
       if (group.length > 0 && groupHeight + gap + unitHeight > budget) {
         flushGroup()
@@ -365,8 +368,13 @@ async function exportPaginatedSource(
   pdfPageCount: number,
   staging: HTMLElement,
 ): Promise<number> {
-  const { sourcePage, headerSelector, bodySelector, sectionSelector, footerSelector } =
-    config
+  const {
+    sourcePage,
+    headerSelector,
+    bodySelector,
+    sectionSelector,
+    footerSelector,
+  } = config
 
   const header = sourcePage.querySelector<HTMLElement>(headerSelector)
   const footer = sourcePage.querySelector<HTMLElement>(footerSelector)
@@ -435,9 +443,7 @@ async function exportPaginatedSource(
     bodyWrapper.className = 'space-y-8'
     for (let bucketIndex = 0; bucketIndex < bucket.length; bucketIndex++) {
       const unit = printUnits[bucket[bucketIndex]!]!
-      bodyWrapper.appendChild(
-        renderPrintUnit(unit, bucketIndex === 0),
-      )
+      bodyWrapper.appendChild(renderPrintUnit(unit, bucketIndex === 0))
     }
     bodyEl.appendChild(bodyWrapper)
     pageEl.appendChild(bodyEl)
@@ -504,7 +510,9 @@ export async function downloadWorksheetPdf(
           headerSelector: isAnswerKey
             ? '.answer-key-header'
             : '.worksheet-page-header',
-          bodySelector: isAnswerKey ? '.answer-key-body' : '.worksheet-page-body',
+          bodySelector: isAnswerKey
+            ? '.answer-key-body'
+            : '.worksheet-page-body',
           sectionSelector: '.worksheet-section',
           footerSelector: '.worksheet-page-footer',
           pageSize,

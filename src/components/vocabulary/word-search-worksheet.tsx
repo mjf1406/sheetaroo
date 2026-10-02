@@ -19,8 +19,8 @@ import {
   WORD_SEARCH_CASE_OPTIONS,
   WORD_SEARCH_MAX_SIZE,
   WORD_SEARCH_MIN_SIZE,
-  type WordSearchSettings,
 } from '@/lib/word-search-types'
+import type { WordSearchSettings } from '@/lib/word-search-types'
 
 type WordSearchWorksheetProps = {
   words: string[]
@@ -39,8 +39,7 @@ export function WordSearchWorksheet({
   )
 
   const emptyAfterSanitize = useMemo(
-    () =>
-      words.filter((word) => sanitizeWordForSearch(word).length === 0),
+    () => words.filter((word) => sanitizeWordForSearch(word).length === 0),
     [words],
   )
 
@@ -60,10 +59,7 @@ export function WordSearchWorksheet({
 
   function clampSize(value: number | ''): number {
     if (value === '') return DEFAULT_WORD_SEARCH_SETTINGS.width
-    return Math.min(
-      WORD_SEARCH_MAX_SIZE,
-      Math.max(WORD_SEARCH_MIN_SIZE, value),
-    )
+    return Math.min(WORD_SEARCH_MAX_SIZE, Math.max(WORD_SEARCH_MIN_SIZE, value))
   }
 
   return (
@@ -136,7 +132,9 @@ export function WordSearchWorksheet({
             <Switch
               id="word-search-vertical"
               checked={settings.directions.vertical}
-              onCheckedChange={(checked) => updateDirection('vertical', checked)}
+              onCheckedChange={(checked) =>
+                updateDirection('vertical', checked)
+              }
             />
             <Label htmlFor="word-search-vertical" className="font-normal">
               Vertical
@@ -146,7 +144,9 @@ export function WordSearchWorksheet({
             <Switch
               id="word-search-diagonal"
               checked={settings.directions.diagonal}
-              onCheckedChange={(checked) => updateDirection('diagonal', checked)}
+              onCheckedChange={(checked) =>
+                updateDirection('diagonal', checked)
+              }
             />
             <Label htmlFor="word-search-diagonal" className="font-normal">
               Diagonal
@@ -156,7 +156,9 @@ export function WordSearchWorksheet({
             <Switch
               id="word-search-backwards"
               checked={settings.directions.backwards}
-              onCheckedChange={(checked) => updateDirection('backwards', checked)}
+              onCheckedChange={(checked) =>
+                updateDirection('backwards', checked)
+              }
             />
             <Label htmlFor="word-search-backwards" className="font-normal">
               Backwards

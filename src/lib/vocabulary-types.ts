@@ -24,7 +24,8 @@ export const WORKSHEET_LABELS: Record<WorksheetId, string> = {
 }
 
 export const WORKSHEET_IDS_BY_LABEL: WorksheetId[] = [...WORKSHEET_IDS].sort(
-  (left, right) => WORKSHEET_LABELS[left].localeCompare(WORKSHEET_LABELS[right]),
+  (left, right) =>
+    WORKSHEET_LABELS[left].localeCompare(WORKSHEET_LABELS[right]),
 )
 
 export const WORKSHEET_DESCRIPTIONS: Record<WorksheetId, string> = {
@@ -34,7 +35,8 @@ export const WORKSHEET_DESCRIPTIONS: Record<WorksheetId, string> = {
   'word-search': 'Customizable word search puzzle',
   'fill-in-the-blank': 'Sentences with blanks for vocabulary practice',
   'word-forms': 'Practice different forms of each word',
-  'word-stories': 'Stories using vocabulary words with definition matching and cloze practice',
+  'word-stories':
+    'Stories using vocabulary words with definition matching and cloze practice',
 }
 
 export function getWorksheetPath(id: WorksheetId): string {
@@ -48,9 +50,15 @@ export function parseWorksheetId(slug: string): WorksheetId | null {
   return null
 }
 
-export const VOCABULARY_NAV_ITEMS: Array<{ label: string; view: WorksheetView }> = [
+export const VOCABULARY_NAV_ITEMS: Array<{
+  label: string
+  view: WorksheetView
+}> = [
   { label: 'All', view: 'all' },
-  ...WORKSHEET_IDS_BY_LABEL.map((id) => ({ label: WORKSHEET_LABELS[id], view: id })),
+  ...WORKSHEET_IDS_BY_LABEL.map((id) => ({
+    label: WORKSHEET_LABELS[id],
+    view: id,
+  })),
 ]
 
 const VALID_VIEWS = new Set<string>(['all', ...WORKSHEET_IDS])
@@ -82,7 +90,9 @@ export function getWords(entries: VocabEntry[]): string[] {
   return entries.map((entry) => entry.word)
 }
 
-export function worksheetSelectionFromView(view: WorksheetView): Record<WorksheetId, boolean> {
+export function worksheetSelectionFromView(
+  view: WorksheetView,
+): Record<WorksheetId, boolean> {
   if (view === 'all') {
     return Object.fromEntries(WORKSHEET_IDS.map((id) => [id, true])) as Record<
       WorksheetId,

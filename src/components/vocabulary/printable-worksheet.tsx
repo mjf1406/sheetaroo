@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo } from 'react'
+import type { ReactNode } from 'react'
 
 import { APP_NAME, LOGO_SM } from '@/lib/brand'
 import type {
@@ -10,25 +11,29 @@ import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import {
   buildWordFormsTableModel,
   orderWordFormEntriesByWords,
-  type WordFormEntry,
-  type WordFormSentence,
-  type WordFormsTableModel,
+} from '@/lib/word-forms-types'
+import type {
+  WordFormEntry,
+  WordFormSentence,
+  WordFormsTableModel,
 } from '@/lib/word-forms-types'
 import {
   buildClozeWordBank,
   buildDefinitionList,
   orderStoriesForPart2,
   parseWordTokens,
-  type WordStory,
-  type WordStoryDefinition,
-  type WordStorySettings,
+} from '@/lib/word-stories-types'
+import type {
+  WordStory,
+  WordStoryDefinition,
+  WordStorySettings,
 } from '@/lib/word-stories-types'
 import { generateCrossword } from '@/lib/crossword-generator'
-import {
-  formatCrosswordClueText,
-  type CrosswordClue,
-  type CrosswordPlacement,
-  type CrosswordResult,
+import { formatCrosswordClueText } from '@/lib/crossword-types'
+import type {
+  CrosswordClue,
+  CrosswordPlacement,
+  CrosswordResult,
 } from '@/lib/crossword-types'
 import { generateWordSearch } from '@/lib/word-search-generator'
 import {
@@ -45,12 +50,15 @@ import {
   wordStoriesClozeInstructions,
   wordStoriesDefinitionMatchInstructions,
   wordStoriesPart1Instructions,
-  type PreviewableWorksheetId,
-  type PageSize,
   variantLabel,
 } from '@/lib/worksheet-preview'
-import type { WordSearchResult, WordSearchSettings } from '@/lib/word-search-types'
-import { WORKSHEET_LABELS, type WorksheetId } from '@/lib/vocabulary-types'
+import type { PreviewableWorksheetId, PageSize } from '@/lib/worksheet-preview'
+import type {
+  WordSearchResult,
+  WordSearchSettings,
+} from '@/lib/word-search-types'
+import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 import { orderSentencesByWords, seededShuffle } from '@/lib/word-order'
 
 type PrintableWorksheetProps = {
@@ -427,7 +435,9 @@ function clueTextForPlacement(
   clues: CrosswordClue[],
 ): string {
   const clue = clues.find(
-    (item) => normalizeCrosswordWord(item.word) === normalizeCrosswordWord(placement.word),
+    (item) =>
+      normalizeCrosswordWord(item.word) ===
+      normalizeCrosswordWord(placement.word),
   )
   return formatCrosswordClueText(clue?.definitions ?? [])
 }
@@ -445,7 +455,9 @@ function CrosswordClueList({
 }) {
   if (placements.length === 0) return null
 
-  const sorted = [...placements].sort((left, right) => left.number - right.number)
+  const sorted = [...placements].sort(
+    (left, right) => left.number - right.number,
+  )
 
   return (
     <div className="space-y-2">
@@ -455,7 +467,9 @@ function CrosswordClueList({
           <li key={`${placement.direction}-${placement.number}`}>
             <span className="font-medium">{placement.number}. </span>
             {clueTextForPlacement(placement, clues) || (
-              <span className="italic text-black/50">No definition provided</span>
+              <span className="italic text-black/50">
+                No definition provided
+              </span>
             )}
             {showAnswers ? (
               <span className="font-medium"> — {placement.word}</span>
@@ -524,7 +538,9 @@ function CrosswordSection({
     (clue) => formatCrosswordClueText(clue.definitions).length > 0,
   )
   const placedWords = new Set(
-    result.placements.map((placement) => normalizeCrosswordWord(placement.word)),
+    result.placements.map((placement) =>
+      normalizeCrosswordWord(placement.word),
+    ),
   )
 
   return (
@@ -743,7 +759,11 @@ function getWordStoriesData({
   return {
     sortedStories,
     part2Stories: orderStoriesForPart2(sortedStories, definitionSeed),
-    definitionList: buildDefinitionList(sortedStories, definitions, definitionSeed),
+    definitionList: buildDefinitionList(
+      sortedStories,
+      definitions,
+      definitionSeed,
+    ),
     clozeWordBank: buildClozeWordBank(sortedStories, definitionSeed),
     hasContent: sortedStories.length > 0,
   }
@@ -767,7 +787,9 @@ function WordStoriesPart1Section({
   return (
     <section className="space-y-3">
       <div className="worksheet-section-prefix space-y-3">
-        <h2 className="text-sm font-semibold">{WORKSHEET_LABELS['word-stories']}</h2>
+        <h2 className="text-sm font-semibold">
+          {WORKSHEET_LABELS['word-stories']}
+        </h2>
         <p className="text-xs leading-relaxed text-black/70">
           {wordStoriesPart1Instructions()}
         </p>
@@ -860,7 +882,10 @@ function WordStoriesClozeSection({
         ) : null}
       </div>
       {part2Stories.map((story, index) => (
-        <article key={`cloze-${story.id}`} className="worksheet-pdf-unit space-y-2">
+        <article
+          key={`cloze-${story.id}`}
+          className="worksheet-pdf-unit space-y-2"
+        >
           <h4 className="text-xs font-semibold">Cloze Story {index + 1}</h4>
           <p className="text-xs leading-relaxed">
             <StoryTextContent
@@ -897,9 +922,7 @@ function WordStoriesWorksheetSections({
 
   return (
     <>
-      <WorksheetSectionShell
-        sectionId={`${shellIdPrefix}word-stories-part-1`}
-      >
+      <WorksheetSectionShell sectionId={`${shellIdPrefix}word-stories-part-1`}>
         <WordStoriesPart1Section {...sharedProps} />
       </WorksheetSectionShell>
       {settings.includeDefinitionMatch && hasContent ? (
@@ -974,7 +997,9 @@ function WordFormsSection({
   return (
     <section className="space-y-3">
       <div className="worksheet-section-prefix space-y-3">
-        <h2 className="text-sm font-semibold">{WORKSHEET_LABELS['word-forms']}</h2>
+        <h2 className="text-sm font-semibold">
+          {WORKSHEET_LABELS['word-forms']}
+        </h2>
         <ol className="list-decimal space-y-1.5 pl-4 text-xs leading-relaxed text-black/70">
           {instructionSteps.map((step) => (
             <li key={step}>{step}</li>
@@ -1107,18 +1132,16 @@ function WorksheetSections({
             </WorksheetSectionShell>
           )
         }
-        if (sectionId === 'word-stories') {
-          return (
-            <WordStoriesWorksheetSections
-              key={sectionId}
-              stories={gradeWordStories}
-              definitions={wordStoryDefinitions}
-              settings={wordStorySettings}
-              definitionSeed={wordStoryDefinitionSeed}
-            />
-          )
-        }
-        return null
+        const wordStoriesSection: 'word-stories' = sectionId
+        return (
+          <WordStoriesWorksheetSections
+            key={wordStoriesSection}
+            stories={gradeWordStories}
+            definitions={wordStoryDefinitions}
+            settings={wordStorySettings}
+            definitionSeed={wordStoryDefinitionSeed}
+          />
+        )
       })}
     </div>
   )
@@ -1202,8 +1225,7 @@ function AnswerKeyContent({
         </WorksheetSectionShell>
       ) : null}
 
-      {sections.includes('fill-in-the-blank') &&
-      fillInBlankWords.length > 0 ? (
+      {sections.includes('fill-in-the-blank') && fillInBlankWords.length > 0 ? (
         <WorksheetSectionShell sectionId="answer-fill-in-the-blank">
           <div className="space-y-2">
             <h3 className="text-xs font-semibold">
@@ -1289,7 +1311,9 @@ function AnswerKeyContent({
             section.stories.length === 0 ? null : (
               <div key={sectionIndex} className="space-y-4">
                 {section.label ? (
-                  <WorksheetSectionShell sectionId={`answer-word-stories-grade-${sectionIndex}`}>
+                  <WorksheetSectionShell
+                    sectionId={`answer-word-stories-grade-${sectionIndex}`}
+                  >
                     <p className="text-xs font-medium">{section.label}</p>
                   </WorksheetSectionShell>
                 ) : null}
@@ -1545,21 +1569,23 @@ export function PrintableWorksheet({
 
       {hasAnswerKeyContent ? (
         <div className="answer-key-section page-break-before mt-8 border-t border-black/20 bg-white p-6 pt-8">
-          <h2 className="answer-key-header mb-4 text-sm font-bold">Answer Key</h2>
+          <h2 className="answer-key-header mb-4 text-sm font-bold">
+            Answer Key
+          </h2>
           <div className="answer-key-body">
             <AnswerKeyContent
-            sections={sections}
-            orderedWordsByWorksheet={orderedWordsByWorksheet}
-            wordSearchResult={wordSearchResult}
-            crosswordResult={crosswordResult}
-            crosswordAnswerSections={crosswordAnswerSections}
-            wordFormAnswerSections={wordFormAnswerSections}
-            wordStoryAnswerSections={wordStoryAnswerSections}
-            wordForms={wordForms}
-            wordStoryDefinitions={wordStoryDefinitions}
-            wordStorySettings={wordStorySettings}
-            wordStoryDefinitionSeed={wordStoryDefinitionSeed}
-          />
+              sections={sections}
+              orderedWordsByWorksheet={orderedWordsByWorksheet}
+              wordSearchResult={wordSearchResult}
+              crosswordResult={crosswordResult}
+              crosswordAnswerSections={crosswordAnswerSections}
+              wordFormAnswerSections={wordFormAnswerSections}
+              wordStoryAnswerSections={wordStoryAnswerSections}
+              wordForms={wordForms}
+              wordStoryDefinitions={wordStoryDefinitions}
+              wordStorySettings={wordStorySettings}
+              wordStoryDefinitionSeed={wordStoryDefinitionSeed}
+            />
           </div>
           <WorksheetGeneratedFooter />
         </div>

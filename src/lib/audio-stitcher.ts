@@ -1,15 +1,8 @@
 import type { AudioSegment } from '@/lib/dictation-types'
 
-function createSilentBuffer(
-  context: AudioContext,
-  durationMs: number,
-  sampleRate: number,
-): AudioBuffer {
-  const frameCount = Math.max(1, Math.round((durationMs / 1000) * sampleRate))
-  return context.createBuffer(1, frameCount, sampleRate)
-}
-
-export async function stitchAudioSegments(segments: AudioSegment[]): Promise<Blob> {
+export async function stitchAudioSegments(
+  segments: AudioSegment[],
+): Promise<Blob> {
   if (segments.length === 0) {
     throw new Error('No audio segments to stitch')
   }
@@ -27,7 +20,9 @@ export async function stitchAudioSegments(segments: AudioSegment[]): Promise<Blo
     const sampleRate = decoded[0]!.buffer.sampleRate
     const channels = decoded[0]!.buffer.numberOfChannels
     const totalLength = decoded.reduce((sum, item) => {
-      const silenceFrames = Math.round((item.silenceAfterMs / 1000) * sampleRate)
+      const silenceFrames = Math.round(
+        (item.silenceAfterMs / 1000) * sampleRate,
+      )
       return sum + item.buffer.length + silenceFrames
     }, 0)
 
@@ -36,13 +31,17 @@ export async function stitchAudioSegments(segments: AudioSegment[]): Promise<Blo
     let offset = 0
     for (const item of decoded) {
       for (let channel = 0; channel < channels; channel++) {
-        const source = item.buffer.getChannelData(Math.min(channel, item.buffer.numberOfChannels - 1))
+        const source = item.buffer.getChannelData(
+          Math.min(channel, item.buffer.numberOfChannels - 1),
+        )
         output.copyToChannel(source, channel, offset)
       }
       offset += item.buffer.length
 
       if (item.silenceAfterMs > 0) {
-        const silenceFrames = Math.round((item.silenceAfterMs / 1000) * sampleRate)
+        const silenceFrames = Math.round(
+          (item.silenceAfterMs / 1000) * sampleRate,
+        )
         offset += silenceFrames
       }
     }
@@ -92,7 +91,11 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
     for (let channel = 0; channel < numChannels; channel++) {
       const sample = buffer.getChannelData(channel)[i] ?? 0
       const clamped = Math.max(-1, Math.min(1, sample))
-      view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true)
+      view.setInt16(
+        offset,
+        clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff,
+        true,
+      )
       offset += 2
     }
   }
@@ -109,7 +112,10 @@ export function base64ToBlob(base64: string, mimeType: string): Blob {
   return new Blob([bytes], { type: mimeType })
 }
 
-export async function uploadBlob(uploadUrl: string, blob: Blob): Promise<string> {
+export async function uploadBlob(
+  uploadUrl: string,
+  blob: Blob,
+): Promise<string> {
   const response = await fetch(uploadUrl, {
     method: 'POST',
     headers: { 'Content-Type': blob.type || 'audio/wav' },

@@ -11,17 +11,24 @@ type WorksheetPreviewScalerProps = {
   measureKey: string
 }
 
-export function WorksheetPreviewScaler({ children, measureKey }: WorksheetPreviewScalerProps) {
+export function WorksheetPreviewScaler({
+  children,
+  measureKey,
+}: WorksheetPreviewScalerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const [layout, setLayout] = useState<ScaledLayout>({ scale: 1, width: 0, height: 0 })
+  const [layout, setLayout] = useState<ScaledLayout>({
+    scale: 1,
+    width: 0,
+    height: 0,
+  })
 
   useLayoutEffect(() => {
     const container = containerRef.current
     const content = contentRef.current
     if (!container || !content) return
 
-    function measure() {
+    const measure = () => {
       const available = container.clientWidth
       const naturalWidth = content.offsetWidth
       const naturalHeight = content.offsetHeight

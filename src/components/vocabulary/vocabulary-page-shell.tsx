@@ -4,9 +4,7 @@ import { useMemo, useState } from 'react'
 import { DifferentiationCard } from '@/components/vocabulary/differentiation-card'
 import { PrintableWorksheet } from '@/components/vocabulary/printable-worksheet'
 import { useVocabularyBuilder } from '@/components/vocabulary/vocabulary-builder-context'
-import {
-  BUILDER_COMPONENTS,
-} from '@/components/vocabulary/vocabulary-builders'
+import { BUILDER_COMPONENTS } from '@/components/vocabulary/vocabulary-builders'
 import { VocabularyWordInput } from '@/components/vocabulary/vocabulary-word-input'
 import { WorksheetCard } from '@/components/vocabulary/worksheet-card'
 import { WorksheetChecklist } from '@/components/vocabulary/worksheet-checklist'
@@ -20,8 +18,8 @@ import {
   WORKSHEET_IDS,
   WORKSHEET_LABELS,
   worksheetSelectionFromView,
-  type WorksheetId,
 } from '@/lib/vocabulary-types'
+import type { WorksheetId } from '@/lib/vocabulary-types'
 
 type VocabularyPageShellProps = {
   mode: 'combined' | WorksheetId

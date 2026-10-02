@@ -1,9 +1,9 @@
-import {
-  sanitizeWordForCrossword,
-  type CrosswordCell,
-  type CrosswordDirection,
-  type CrosswordPlacement,
-  type CrosswordResult,
+import { sanitizeWordForCrossword } from '@/lib/crossword-types'
+import type {
+  CrosswordCell,
+  CrosswordDirection,
+  CrosswordPlacement,
+  CrosswordResult,
 } from '@/lib/crossword-types'
 
 function mulberry32(seed: number): () => number {
@@ -25,7 +25,9 @@ function directionDelta(direction: CrosswordDirection): [number, number] {
   return direction === 'across' ? [0, 1] : [1, 0]
 }
 
-function perpendicularDelta(direction: CrosswordDirection): Array<[number, number]> {
+function perpendicularDelta(
+  direction: CrosswordDirection,
+): Array<[number, number]> {
   return direction === 'across'
     ? [
         [1, 0],
@@ -98,7 +100,6 @@ type RawPlacement = {
 }
 
 function findPlacementCandidates(
-  grid: LetterGrid,
   word: string,
   existingPlacements: RawPlacement[],
 ): Array<{ row: number; col: number; direction: CrosswordDirection }> {
@@ -114,7 +115,11 @@ function findPlacementCandidates(
       placedDirection === 'across' ? 'down' : 'across'
     const [pdr, pdc] = directionDelta(placedDirection)
 
-    for (let placedIndex = 0; placedIndex < placement.word.length; placedIndex++) {
+    for (
+      let placedIndex = 0;
+      placedIndex < placement.word.length;
+      placedIndex++
+    ) {
       const placedLetter = placement.word[placedIndex]!
       for (let wordIndex = 0; wordIndex < word.length; wordIndex++) {
         if (word[wordIndex] !== placedLetter) continue
@@ -185,6 +190,7 @@ function assignNumbers(
 
   for (const [key, letter] of grid.entries()) {
     const [row, col] = key.split(',').map(Number)
+    if (row === undefined || col === undefined) continue
     const normalizedRow = row - minRow
     const normalizedCol = col - minCol
     numberedGrid[normalizedRow]![normalizedCol] = {
@@ -261,7 +267,7 @@ export function generateCrossword(
   })
 
   for (const item of sorted.slice(1)) {
-    const candidates = findPlacementCandidates(grid, item.cleaned, rawPlacements)
+    const candidates = findPlacementCandidates(item.cleaned, rawPlacements)
     if (candidates.length === 0) {
       unplaced.push(item.original)
       continue

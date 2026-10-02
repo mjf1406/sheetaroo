@@ -21,16 +21,16 @@ import type {
 
 export type BuilderSectionProps = {
   entries: ReturnType<typeof parseVocabularyText>
-  tiers: Array<DifferentiationTier>
-  sentences: Array<FillInBlankSentence>
-  onSentencesChange: (sentences: Array<FillInBlankSentence>) => void
+  tiers: DifferentiationTier[]
+  sentences: FillInBlankSentence[]
+  onSentencesChange: (sentences: FillInBlankSentence[]) => void
   fillInBlankWordBank: boolean
   onFillInBlankWordBankChange: (wordBank: boolean) => void
-  dictationWords: Array<string>
+  dictationWords: string[]
   dictationSeed: number
   dictationAudioStale: boolean
   keepDictationOrder: boolean
-  listOrderWords: Array<string>
+  listOrderWords: string[]
   onKeepDictationOrderChange: (keep: boolean) => void
   onUseDictationListOrder: () => void
   onShuffleDictationOrder: () => void
@@ -41,21 +41,19 @@ export type BuilderSectionProps = {
   onRestoreDictationOrder: () => void
   wordSearchSettings: WordSearchSettings
   onWordSearchSettingsChange: (settings: WordSearchSettings) => void
-  wordSearchWords: Array<string>
-  wordForms: Array<WordFormEntry>
-  onWordFormsChange: (wordForms: Array<WordFormEntry>) => void
-  wordFormSentences: Array<WordFormSentence>
-  onWordFormSentencesChange: (sentences: Array<WordFormSentence>) => void
-  crosswordClues: Array<CrosswordClue>
-  onCrosswordCluesChange: (clues: Array<CrosswordClue>) => void
-  crosswordWords: Array<string>
+  wordSearchWords: string[]
+  wordForms: WordFormEntry[]
+  onWordFormsChange: (wordForms: WordFormEntry[]) => void
+  wordFormSentences: WordFormSentence[]
+  onWordFormSentencesChange: (sentences: WordFormSentence[]) => void
+  crosswordClues: CrosswordClue[]
+  onCrosswordCluesChange: (clues: CrosswordClue[]) => void
+  crosswordWords: string[]
   crosswordSeed: number
-  wordStories: Array<WordStory>
-  onWordStoriesChange: (stories: Array<WordStory>) => void
-  wordStoryDefinitions: Array<WordStoryDefinition>
-  onWordStoryDefinitionsChange: (
-    definitions: Array<WordStoryDefinition>,
-  ) => void
+  wordStories: WordStory[]
+  onWordStoriesChange: (stories: WordStory[]) => void
+  wordStoryDefinitions: WordStoryDefinition[]
+  onWordStoryDefinitionsChange: (definitions: WordStoryDefinition[]) => void
   wordStorySettings: WordStorySettings
   onWordStorySettingsChange: (settings: WordStorySettings) => void
   wordStoryAssignmentSeed: number
