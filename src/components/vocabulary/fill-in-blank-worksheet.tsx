@@ -20,7 +20,7 @@ import {
 } from '@/lib/fill-in-blank-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
-import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import { promptDefinition, WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 
 import { api } from '../../../convex/_generated/api'
 
@@ -136,7 +136,7 @@ export function FillInBlankWorksheet({
       const results = await generateBatch({
         entries: entries.map((entry) => ({
           word: entry.word,
-          definition: entry.definition,
+          definition: promptDefinition(entry.definitions),
         })),
         tiers: tiersToGenerate.map((tier) => ({
           gradeLevel: tier.gradeLevel,
@@ -179,7 +179,7 @@ export function FillInBlankWorksheet({
     try {
       const result = await regenerateOne({
         word: sentence.word,
-        definition: entry?.definition,
+        definition: entry ? promptDefinition(entry.definitions) : undefined,
         gradeLevel: sentence.gradeLevel,
         currentSentence: sentence.sentence,
       })

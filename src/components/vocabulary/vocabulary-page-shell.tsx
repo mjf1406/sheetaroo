@@ -27,8 +27,8 @@ type VocabularyPageShellProps = {
 
 export function VocabularyPageShell({ mode }: VocabularyPageShellProps) {
   const {
-    wordText,
-    setWordText,
+    rows,
+    setRows,
     worksheetTitle,
     setWorksheetTitle,
     entries,
@@ -103,8 +103,8 @@ export function VocabularyPageShell({ mode }: VocabularyPageShellProps) {
               }
             >
               <VocabularyWordInput
-                value={wordText}
-                onChange={setWordText}
+                rows={rows}
+                onRowsChange={setRows}
                 title={worksheetTitle}
                 onTitleChange={setWorksheetTitle}
                 entries={entries}

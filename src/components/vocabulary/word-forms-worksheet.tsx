@@ -23,7 +23,7 @@ import type {
   WordFormSentence,
 } from '@/lib/word-forms-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
-import { WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import { promptDefinition, WORKSHEET_LABELS } from '@/lib/vocabulary-types'
 
 import { api } from '../../../convex/_generated/api'
 
@@ -193,7 +193,7 @@ export function WordFormsWorksheet({
       const result = await generateBatch({
         entries: entriesToGenerate.map((entry) => ({
           word: entry.word,
-          definition: entry.definition,
+          definition: promptDefinition(entry.definitions),
         })),
         tiers: tiers.map((tier) => ({ gradeLevel: tier.gradeLevel })),
       })
@@ -233,7 +233,9 @@ export function WordFormsWorksheet({
     try {
       const result = await regenerateOne({
         word: entry.baseWord,
-        definition: vocabEntry?.definition,
+        definition: vocabEntry
+          ? promptDefinition(vocabEntry.definitions)
+          : undefined,
         tiers: tiers.map((tier) => ({ gradeLevel: tier.gradeLevel })),
       })
 
@@ -275,7 +277,9 @@ export function WordFormsWorksheet({
         baseWord: sentence.baseWord,
         form: sentence.form,
         label: sentence.label,
-        definition: vocabEntry?.definition,
+        definition: vocabEntry
+          ? promptDefinition(vocabEntry.definitions)
+          : undefined,
         gradeLevel: sentence.gradeLevel,
         currentSentence: sentence.sentence,
       })

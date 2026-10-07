@@ -6,8 +6,8 @@ import { buildEffectiveCrosswordClues } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import { createDefaultTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
-import type { WorksheetId } from '@/lib/vocabulary-types'
-import { getWords, parseVocabularyText } from '@/lib/vocabulary-types'
+import type { VocabEntry, VocabRow, WorksheetId } from '@/lib/vocabulary-types'
+import { createVocabRow, getWords, rowsToEntries } from '@/lib/vocabulary-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import { DEFAULT_WORD_SEARCH_SETTINGS } from '@/lib/word-search-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
@@ -32,11 +32,11 @@ import {
 import type { BuilderSectionProps } from '@/components/vocabulary/vocabulary-builders'
 
 type VocabularyBuilderContextValue = {
-  wordText: string
-  setWordText: (text: string) => void
+  rows: VocabRow[]
+  setRows: (rows: VocabRow[]) => void
   worksheetTitle: string
   setWorksheetTitle: (title: string) => void
-  entries: ReturnType<typeof parseVocabularyText>
+  entries: VocabEntry[]
   words: string[]
   orderedWordsByWorksheet: ReturnType<typeof buildOrderedWordsByWorksheet>
   tiers: DifferentiationTier[]
@@ -93,7 +93,7 @@ export function VocabularyBuilderProvider({
 }: {
   children: ReactNode
 }) {
-  const [wordText, setWordText] = useState('')
+  const [rows, setRows] = useState<VocabRow[]>(() => [createVocabRow()])
   const [worksheetTitle, setWorksheetTitle] = useState('')
   const [tiers, setTiers] = useState<DifferentiationTier[]>(() => [
     createDefaultTier(),
@@ -135,8 +135,9 @@ export function VocabularyBuilderProvider({
     createShuffleSeed(),
   )
 
-  const entries = useMemo(() => parseVocabularyText(wordText), [wordText])
+  const entries = useMemo(() => rowsToEntries(rows), [rows])
   const words = useMemo(() => getWords(entries), [entries])
+  const wordListKey = JSON.stringify(words)
   const orderedWordsByWorksheet = useMemo(() => {
     const ordered = buildOrderedWordsByWorksheet(words, shuffleSeeds)
     ordered['dictation-audio'] = reconcileKeptWordOrder(dictationOrder, words)
@@ -154,8 +155,9 @@ export function VocabularyBuilderProvider({
     !wordListsEqual(dictationAudioWords, dictationWords)
 
   useEffect(() => {
+    const currentWords = JSON.parse(wordListKey) as string[]
     setDictationOrder((current) => {
-      const next = reconcileKeptWordOrder(current, words)
+      const next = reconcileKeptWordOrder(current, currentWords)
       if (
         current.length === next.length &&
         current.every((word, index) => word === next[index])
@@ -173,7 +175,7 @@ export function VocabularyBuilderProvider({
     setWordStories([])
     setWordStoryDefinitions([])
     setWordStoryAssignmentSeed(createShuffleSeed())
-  }, [words])
+  }, [wordListKey])
 
   function applyShuffle(checked: Record<WorksheetId, boolean>) {
     const next: ShuffleSeeds = { ...shuffleSeeds }
@@ -327,8 +329,8 @@ export function VocabularyBuilderProvider({
   }
 
   const value: VocabularyBuilderContextValue = {
-    wordText,
-    setWordText,
+    rows,
+    setRows,
     worksheetTitle,
     setWorksheetTitle,
     entries,

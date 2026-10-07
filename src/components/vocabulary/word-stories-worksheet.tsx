@@ -15,7 +15,11 @@ import type {
   GradeLevel,
 } from '@/lib/differentiation-types'
 import type { VocabEntry } from '@/lib/vocabulary-types'
-import { getWords, WORKSHEET_LABELS } from '@/lib/vocabulary-types'
+import {
+  getWords,
+  promptDefinition,
+  WORKSHEET_LABELS,
+} from '@/lib/vocabulary-types'
 import {
   buildClozeAssignments,
   buildStoryAssignments,
@@ -58,7 +62,7 @@ function mergeDefinitions(
 
   return entries
     .map((entry) => {
-      const teacherDefinition = entry.definition?.trim()
+      const teacherDefinition = entry.definitions[0]?.trim()
       if (teacherDefinition) {
         return {
           word: entry.word,
@@ -222,7 +226,7 @@ export function WordStoriesWorksheet({
       const results = await generateBatch({
         entries: entries.map((entry) => ({
           word: entry.word,
-          definition: entry.definition,
+          definition: promptDefinition(entry.definitions),
         })),
         tiers: tiersToGenerate.map((tier) => ({
           gradeLevel: tier.gradeLevel,
@@ -270,7 +274,7 @@ export function WordStoriesWorksheet({
       const result = await regenerateStory({
         entries: entries.map((entry) => ({
           word: entry.word,
-          definition: entry.definition,
+          definition: promptDefinition(entry.definitions),
         })),
         gradeLevel: story.gradeLevel,
         storyIndex: story.storyIndex,

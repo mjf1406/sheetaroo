@@ -16,7 +16,7 @@ describe('formatCrosswordClueText', () => {
 describe('buildEffectiveCrosswordClues', () => {
   it('falls back to vocabulary entry definitions', () => {
     const clues = buildEffectiveCrosswordClues(
-      [{ word: 'compare', definition: 'to examine likenesses' }],
+      [{ word: 'compare', definitions: ['to examine likenesses'] }],
       [],
       '5',
     )
@@ -27,5 +27,29 @@ describe('buildEffectiveCrosswordClues', () => {
     expect(formatCrosswordClueText(clue.definitions)).toBe(
       'to examine likenesses',
     )
+  })
+
+  it('uses the first two vocabulary definitions', () => {
+    const clues = buildEffectiveCrosswordClues(
+      [
+        {
+          word: 'compare',
+          definitions: [
+            'to examine likenesses',
+            'to look side by side',
+            'a third definition',
+          ],
+        },
+      ],
+      [],
+      '5',
+    )
+
+    const clue = clues[0]
+    if (!clue) throw new Error('expected a crossword clue')
+    expect(clue.definitions).toEqual([
+      'to examine likenesses',
+      'to look side by side',
+    ])
   })
 })

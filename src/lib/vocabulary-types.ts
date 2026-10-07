@@ -11,7 +11,13 @@ export const WORKSHEET_IDS = [
 export type WorksheetId = (typeof WORKSHEET_IDS)[number]
 export type WorksheetView = 'all' | WorksheetId
 
-export type VocabEntry = { word: string; definition?: string }
+export type VocabEntry = { word: string; definitions: string[] }
+
+export type VocabRow = {
+  id: string
+  word: string
+  definitions: string[]
+}
 
 export const WORKSHEET_LABELS: Record<WorksheetId, string> = {
   'dictation-audio': 'Dictation',
@@ -70,19 +76,83 @@ export function parseWorksheetView(value: unknown): WorksheetView {
   return 'all'
 }
 
+export function createVocabRow(
+  word = '',
+  definitions: string[] = [''],
+): VocabRow {
+  return {
+    id: crypto.randomUUID(),
+    word,
+    definitions: definitions.length > 0 ? definitions : [''],
+  }
+}
+
+export function isBlankVocabRow(row: VocabRow): boolean {
+  return (
+    row.word.trim().length === 0 &&
+    row.definitions.every((item) => !item.trim())
+  )
+}
+
+export function ensureTrailingBlankRow(rows: VocabRow[]): VocabRow[] {
+  const last = rows.at(-1)
+  if (!last || !isBlankVocabRow(last)) {
+    return [...rows, createVocabRow()]
+  }
+  return rows
+}
+
+export function appendVocabRows(
+  rows: VocabRow[],
+  additions: VocabRow[],
+): VocabRow[] {
+  const next = [...rows]
+  const last = next.at(-1)
+  const insertAt = last && isBlankVocabRow(last) ? next.length - 1 : next.length
+  next.splice(insertAt, 0, ...additions)
+  return ensureTrailingBlankRow(next)
+}
+
+export function rowsToEntries(rows: VocabRow[]): VocabEntry[] {
+  return rows.flatMap((row) => {
+    const word = row.word.trim()
+    if (!word) return []
+    return [
+      {
+        word,
+        definitions: row.definitions.map((item) => item.trim()).filter(Boolean),
+      },
+    ]
+  })
+}
+
+export function promptDefinition(definitions: string[]): string | undefined {
+  const joined = definitions
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join('; ')
+  return joined.length > 0 ? joined : undefined
+}
+
 export function parseVocabularyText(text: string): VocabEntry[] {
   return text
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => {
+    .flatMap((line) => {
       const colonIndex = line.indexOf(':')
       if (colonIndex === -1) {
-        return { word: line }
+        return [{ word: line, definitions: [] }]
       }
       const word = line.slice(0, colonIndex).trim()
+      if (!word) return []
       const definition = line.slice(colonIndex + 1).trim()
-      return definition ? { word, definition } : { word }
+      return [
+        {
+          word,
+          definitions: definition ? [definition] : [],
+        },
+      ]
     })
 }
 

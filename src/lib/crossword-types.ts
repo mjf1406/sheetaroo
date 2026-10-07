@@ -1,5 +1,6 @@
 import type { GradeLevel } from '@/lib/differentiation-types'
 import { formatGradeLabel } from '@/lib/differentiation-types'
+import type { VocabEntry } from '@/lib/vocabulary-types'
 
 export type CrosswordClue = {
   id: string
@@ -73,8 +74,15 @@ function normalizeCrosswordWordKey(word: string): string {
   return word.trim().toLowerCase()
 }
 
+function teacherCrosswordDefinitions(entry: VocabEntry): string[] {
+  return entry.definitions
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+}
+
 export function buildEffectiveCrosswordClues(
-  entries: Array<{ word: string; definition?: string }>,
+  entries: VocabEntry[],
   clues: CrosswordClue[],
   defaultGrade: GradeLevel,
 ): CrosswordClue[] {
@@ -87,18 +95,17 @@ export function buildEffectiveCrosswordClues(
         normalizeCrosswordWordKey(clue.word) === wordKey &&
         clue.gradeLevel === defaultGrade,
     )
+    const teacherDefinitions = teacherCrosswordDefinitions(entry)
 
     if (gradeClue) {
       if (formatCrosswordClueText(gradeClue.definitions).length > 0) continue
-
-      const definition = entry.definition?.trim()
-      if (!definition) continue
+      if (teacherDefinitions.length === 0) continue
 
       const index = result.findIndex((clue) => clue.id === gradeClue.id)
       if (index >= 0) {
         result[index] = {
           ...gradeClue,
-          definitions: [definition],
+          definitions: teacherDefinitions,
           source: 'manual',
         }
       }
@@ -109,15 +116,13 @@ export function buildEffectiveCrosswordClues(
       (clue) => normalizeCrosswordWordKey(clue.word) === wordKey,
     )
     if (hasClueForWord) continue
-
-    const definition = entry.definition?.trim()
-    if (!definition) continue
+    if (teacherDefinitions.length === 0) continue
 
     result.push(
       createManualCrosswordClue({
         word: entry.word,
         gradeLevel: defaultGrade,
-        definitions: [definition],
+        definitions: teacherDefinitions,
       }),
     )
   }

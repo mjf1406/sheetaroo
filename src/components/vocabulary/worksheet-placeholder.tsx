@@ -16,7 +16,9 @@ export function WorksheetPlaceholder({
   title,
   entries,
 }: WorksheetPlaceholderProps) {
-  const withDefinitions = entries.filter((entry) => entry.definition).length
+  const withDefinitions = entries.filter(
+    (entry) => entry.definitions.length > 0,
+  ).length
 
   return (
     <section className="space-y-4">

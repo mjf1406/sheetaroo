@@ -122,7 +122,7 @@ export function CrosswordWorksheet({
     const entry = entries.find(
       (item) => normalizeWord(item.word) === normalizeWord(word),
     )
-    return [entry?.definition ?? '', '']
+    return [entry?.definitions[0] ?? '', entry?.definitions[1] ?? '']
   }
 
   function updateWordDefinitions(
@@ -218,8 +218,8 @@ export function CrosswordWorksheet({
           const editorDefs = getDefinitionsForWord(entry.word, defaultGrade)
           return {
             word: entry.word,
-            definition: editorDefs[0]?.trim() || entry.definition,
-            definition2: editorDefs[1]?.trim() || undefined,
+            definition: editorDefs[0]?.trim() || entry.definitions[0],
+            definition2: editorDefs[1]?.trim() || entry.definitions[1],
           }
         }),
         tiers: gradeLevels.map((gradeLevel) => ({ gradeLevel })),
@@ -264,7 +264,8 @@ export function CrosswordWorksheet({
         entries: [
           {
             word: entry.word,
-            definition: entry.definition,
+            definition: entry.definitions[0],
+            definition2: entry.definitions[1],
           },
         ],
         tiers: [{ gradeLevel }],

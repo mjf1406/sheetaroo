@@ -10,7 +10,7 @@ import { WordStoriesWorksheet } from '@/components/vocabulary/word-stories-works
 import type { CrosswordClue } from '@/lib/crossword-types'
 import type { DifferentiationTier } from '@/lib/differentiation-types'
 import type { FillInBlankSentence } from '@/lib/fill-in-blank-types'
-import type { parseVocabularyText, WorksheetId } from '@/lib/vocabulary-types'
+import type { VocabEntry, WorksheetId } from '@/lib/vocabulary-types'
 import type { WordSearchSettings } from '@/lib/word-search-types'
 import type { WordFormEntry, WordFormSentence } from '@/lib/word-forms-types'
 import type {
@@ -20,7 +20,7 @@ import type {
 } from '@/lib/word-stories-types'
 
 export type BuilderSectionProps = {
-  entries: ReturnType<typeof parseVocabularyText>
+  entries: VocabEntry[]
   tiers: DifferentiationTier[]
   sentences: FillInBlankSentence[]
   onSentencesChange: (sentences: FillInBlankSentence[]) => void
